@@ -1,0 +1,10 @@
+[Unit]
+Description=ewave: daily audit (Binance archive reconciliation, late-correction re-fetch)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/tomas/000_Dev/elliot-yaga-sh
+Environment=EWAVE_DATA=/home/tomas/000_Dev/elliot-yaga-sh/data TZ=UTC PYTHONUNBUFFERED=1
+ExecStart=/home/tomas/000_Dev/elliot-yaga-sh/.venv/bin/ewave-data audit
+TimeoutStartSec=2h
+Nice=10

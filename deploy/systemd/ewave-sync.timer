@@ -1,0 +1,11 @@
+[Unit]
+Description=ewave: BTC data sync every 15 minutes (hh:00:20, :15:20, :30:20, :45:20 UTC)
+
+[Timer]
+OnCalendar=*-*-* *:00/15:20 UTC
+AccuracySec=1s
+Persistent=true
+Unit=ewave-sync.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=ewave: daily audit at 04:37 UTC (between two syncs; Binance publishes yesterday's archive by then)
+
+[Timer]
+OnCalendar=*-*-* 04:37:00 UTC
+AccuracySec=1s
+Persistent=true
+Unit=ewave-audit.service
+
+[Install]
+WantedBy=timers.target

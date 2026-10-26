@@ -1,0 +1,11 @@
+# data and environments
+data/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.hypothesis/
+*.egg-info/
+dist/
+build/
+.ruff_cache/
