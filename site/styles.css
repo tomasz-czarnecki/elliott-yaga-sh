@@ -19,7 +19,7 @@
   --gutter: clamp(24px, 4vw, 48px);
   --max: 1200px;
   --header-h: 64px;
-  --bar-h: 40px;
+  --bar-h: 28px;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -85,25 +85,23 @@ a { color: var(--ink); }
 .yaga-bar-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: var(--bar-h);
   color: #C4BFB7;
   text-decoration: none;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.02em;
   transition: color 200ms var(--ease-out);
 }
 .yaga-bar-link strong { color: #F5F4F2; font-weight: 500; }
-.yaga-bar-arrow { display: block; width: 14px; height: 14px; flex: none; transition: transform 200ms var(--ease-out); }
-.yaga-bar-mark { display: block; width: 22px; height: 22px; flex: none; }
-.yaga-bar-note { font-family: var(--mono); font-size: 12px; color: #9A958D; white-space: nowrap; }
+.yaga-bar-arrow { display: block; width: 12px; height: 12px; flex: none; transition: transform 200ms var(--ease-out); }
+.yaga-bar-mark { display: block; width: 16px; height: 16px; flex: none; }
 
 @media (hover: hover) {
   .yaga-bar-link:hover { color: #F5F4F2; }
   .yaga-bar-link:hover .yaga-bar-arrow { transform: translateX(-3px); }
 }
-@media (max-width: 560px) { .yaga-bar-note { display: none; } }
 
 /* Header */
 
