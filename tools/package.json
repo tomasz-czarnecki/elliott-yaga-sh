@@ -1,0 +1,9 @@
+{
+  "name": "elliott-site-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only: headless screenshots and checks of site/. Not needed to view or deploy the site.",
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
+  }
+}

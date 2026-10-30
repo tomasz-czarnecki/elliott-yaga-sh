@@ -1,4 +1,4 @@
-"""ewave-data: sync / backfill / audit / rebuild / reindex / status / gaps / show."""
+"""ewave-data: sync / backfill / audit / rebuild / reindex / status / gaps / show / export-site."""
 from __future__ import annotations
 
 import argparse
@@ -12,6 +12,7 @@ from . import health
 from .audit import audit_native, pick_native_days, run_audit
 from .backfill import backfill
 from .config import MINUTE_MS, VENUES, UTC, data_root, iso_ms, raise_nofile_limit, resolve_venue
+from .export import export_site, site_data_dir
 from .maintenance import rebuild, reindex
 from .sources.binance import BinanceArchive, BinanceSource
 from .sources.bitstamp import BitstampSource
@@ -164,6 +165,12 @@ def cmd_show(c: Collector, a) -> int:
     return 0
 
 
+def cmd_export_site(c: Collector, a) -> int:
+    for line in export_site(c, a.out or site_data_dir()):
+        print(line)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ewave-data", description="BTC 1m data collector for the Elliott Wave analyzer")
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging")
@@ -212,6 +219,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--tf", default="1m", choices=["1m", "15m", "1h", "4h", "1d"])
     s.add_argument("--csv", action="store_true")
     s.set_defaults(fn=cmd_show)
+
+    s = sub.add_parser("export-site", help="write complete bars and stats.json for the static site")
+    s.add_argument("--out", help="output directory (default: site/data in the project)")
+    s.set_defaults(fn=cmd_export_site)
     return p
 
 

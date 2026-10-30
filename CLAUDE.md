@@ -9,10 +9,11 @@ Build a system that studies the full Bitcoin price history, counts Elliott waves
 ## Status
 - **Phase 0 (data collector): built** — `src/ewave/ingest/`, run by systemd timers. See "Data collector" below.
 - Phases 1–5 (pivots/grammar, statistics, scoring, live loop, evaluation): not started.
+- **Site: built**: static landing page and candlestick chart in `site/`. See "Site" below.
 
 ## Reference docs (read before designing anything)
-- `probabilistic-elliott-wave-engine-plan.md`: architecture, data structures, Phases 0–5, evaluation, and where LLMs fit. **This is the master plan.**
-- `btc-15m-history-data-sources.md`: where the data comes from, sources ranked, the limits of each.
+- `research/probabilistic-elliott-wave-engine-plan.md`: architecture, data structures, Phases 0–5, evaluation, and where LLMs fit. **This is the master plan.**
+- `research/btc-15m-history-data-sources.md`: where the data comes from, sources ranked, the limits of each.
 
 ## Non-negotiable principles
 - **Counting is deterministic code, never the LLM.** Pivots, labels, ratios and probabilities come from the engine. An LLM may only narrate the engine's JSON, and every number it writes must match a number in that JSON.
@@ -40,7 +41,7 @@ data/state/catalog.sqlite                         days, gaps, archive versions, 
 Read it with `ewave.data`: `load_1m(venue, start, end)` and `load_bars(venue, tf, start, end, complete_only=True)` (UTC, end exclusive; only the needed day files are opened). Never glob the raw tree by hand.
 
 ### Commands (`ewave-data`, installed in `.venv`; run with `uv run ewave-data …`)
-`sync` (timer, every 15 min) · `backfill --venue V [--since D]` · `audit` (timer, daily 04:37 UTC; `--native` compares our bars with each exchange's own candles) · `status [--check]` · `gaps [--no-trades MIN]` · `show VENUE DAY [--tf 15m] [--csv]` · `rebuild` · `reindex`. Tests: `uv run pytest` (`-m network` for the live smoke tests). Timers live in `deploy/systemd/`; logs: `journalctl --user -u ewave-sync`.
+`sync` (timer, every 15 min) · `backfill --venue V [--since D]` · `audit` (timer, daily 04:37 UTC; `--native` compares our bars with each exchange's own candles) · `status [--check]` · `gaps [--no-trades MIN]` · `show VENUE DAY [--tf 15m] [--csv]` · `rebuild` · `reindex` · `export-site [--out DIR]`. Tests: `uv run pytest` (`-m network` for the live smoke tests). Timers live in `deploy/systemd/`; logs: `journalctl --user -u ewave-sync`.
 
 ### Data rules (verified against the live APIs; do not "simplify" these)
 - All timestamps are **UTC bar open time**; internally Int64 epoch **ms**. Bars are left-closed, labelled by open time, and never cross a day boundary.
@@ -65,6 +66,12 @@ Read it with `ewave.data`: `load_1m(venue, start, end)` and `load_bars(venue, tf
 - **TradingView's Bitstamp and Binance *volumes* differ slightly (≤ ~1%) from the exchanges' data**; prices are identical. Our minutes equal the exchanges' own API/archives (and ff137 for Bitstamp).
 - Bitstamp: 2011–2013 is mostly no-trade minutes (thin market) and Jan 2015 has a 6,472-minute halt (flat zero-volume rows). Consider starting statistics at 2013-03.
 - Binance bars that span an outage have `n_minutes` below the bar length; check it before trusting such a bar.
+
+## Site
+Static frontend, no build step, for elliott.yaga.sh: `index.html` (landing, its numbers come from `data/stats.json`), `chart.html` (TradingView Lightweight Charts, vendored in `vendor/`; keep its attribution logo enabled). Style follows yaga.sh, re-tinted to navy.
+- **Export:** `uv run ewave-data export-site [--out DIR]` writes complete bars only to `site/data/` (gitignored): `stats.json` and `bars/{venue}/{tf}.json`. Format is in `src/ewave/ingest/export.py`. 15m is capped to the last 365 days.
+- **Preview:** `python3 -m http.server 8082 --bind 127.0.0.1 --directory site`
+- **Checks:** `cd tools && npm install && node shots_site.mjs` (screenshots, console errors, failed requests; dev only, not needed to deploy).
 
 ## Stack
 Python 3.12, **uv** (`uv sync`; `exclude-newer` pins packages to releases ≥14 days old), Polars 2.0, httpx, SQLite (stdlib), pytest + Hypothesis. DuckDB/Numba are not needed yet. Plotly or Lightweight Charts for charts later.

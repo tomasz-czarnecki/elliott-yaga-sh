@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elliott waves on Bitcoin · elliott.yaga.sh</title>
+  <meta name="description" content="A research project on Bitcoin's full price history. The minute data from three exchanges is collected and verified. The wave counting is not built.">
+  <link rel="icon" href="assets/yaga-mark-dark.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="common.js" defer></script>
+  <script src="landing.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-switch">
+        <a href="#top" class="brand">
+          <img class="brand-mark" src="assets/yaga-mark-dark.webp" width="128" height="128" alt="">
+          <span class="brand-name">elliott.yaga.sh</span>
+        </a>
+        <details class="site-menu">
+          <summary aria-label="Switch site">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+          </summary>
+          <a class="brand site-menu-item" href="https://www.yaga.sh">
+            <img class="brand-mark" src="assets/yaga-mark-dark.webp" width="128" height="128" alt="">
+            <span class="site-menu-text">
+              <span class="brand-name">Yaga.sh</span>
+              <span class="site-menu-note">Main site</span>
+            </span>
+          </a>
+        </details>
+      </div>
+      <a href="chart.html" class="btn btn-dark btn-sm">Open the chart</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-bar"></span><span>Yaga.sh · BTC research</span></div>
+          <h1>Do Elliott waves hold up on Bitcoin? <span class="accent">We're building the data to check.</span></h1>
+          <p class="lead">A research project on Bitcoin's full price history. The minute data from three exchanges is collected and verified. The wave counting is not built.</p>
+          <div class="actions">
+            <a href="chart.html" class="btn btn-dark">Open the chart</a>
+            <a href="https://github.com/tomasz-czarnecki/elliott-yaga-sh" class="btn btn-ghost">GitHub</a>
+          </div>
+          <p class="note">Data until <span data-total="until">...</span>. Research, not trading advice or signals.</p>
+        </div>
+        <figure class="history">
+          <a class="history-link" href="chart.html?venue=bitstamp&amp;tf=1d" aria-label="Open the full Bitstamp history on the chart">
+            <span class="history-plot"></span>
+          </a>
+          <figcaption>Bitstamp BTC/USD since <span data-history="from">...</span>. One candle per month, log scale. Open the chart for every bar.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="eyebrow-bar"></span>The question</div>
+        <h2>The claims are everywhere. <span class="accent">The evidence is thin.</span></h2>
+        <div class="card-grid">
+          <article class="card">
+            <p class="card-kicker">Batchelor &amp; Ramyar, 2006</p>
+            <h3>The Dow, 1914–2002</h3>
+            <p>A few significant Fibonacci ratios appear, but no more than chance predicts given the number of tests.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Kempen, 2016</p>
+            <h3>Dow, Nasdaq, DAX, 1974–2015</h3>
+            <p>Across 17,931 retracements, no Fibonacci level stands out. Retracements follow a log-normal distribution.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Bitcoin</p>
+            <h3>No rigorous study found</h3>
+            <p>Figures like "73% of wave 2s retrace <span class="nowrap">50–61.8%</span>" come from posts and blogs, with no chance baseline.</p>
+          </article>
+        </div>
+        <p class="lead">Prechter's reply is fair: Elliott claims ratios between specific wave pairs, so testing every swing dilutes the effect. Testing that properly takes clean data first.</p>
+      </div>
+    </section>
+
+    <section class="section" id="data">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="eyebrow-bar"></span>The dataset</div>
+        <h2>Three exchanges, <span class="accent">stored separately.</span></h2>
+        <div class="tiles">
+          <div class="tile"><div class="tile-value" data-total="rows">...</div><div class="tile-label">one-minute rows</div></div>
+          <div class="tile"><div class="tile-value" data-total="years">...</div><div class="tile-label">years of history</div></div>
+          <div class="tile"><div class="tile-value" data-total="venues">...</div><div class="tile-label">venues</div></div>
+        </div>
+        <div class="card-grid">
+          <article class="card" data-venue="bitstamp_btcusd">
+            <p class="card-kicker">Spot · BTC/USD</p>
+            <h3>Bitstamp</h3>
+            <dl class="facts">
+              <div class="fact"><dt>First minute</dt><dd data-field="first">...</dd></div>
+              <div class="fact"><dt>Last minute</dt><dd data-field="last">...</dd></div>
+              <div class="fact"><dt>1m rows</dt><dd data-field="rows">...</dd></div>
+              <div class="fact"><dt>Missing minutes</dt><dd data-field="missing">...</dd></div>
+              <div class="fact"><dt>Last sync</dt><dd data-field="sync">...</dd></div>
+            </dl>
+            <p class="card-foot">The longest history. Checked against the ff137 snapshot, its own candles and TradingView prices. Before 2013 it is mostly no-trade minutes.</p>
+          </article>
+          <article class="card" data-venue="binance_btcusdt">
+            <p class="card-kicker">Spot · BTCUSDT</p>
+            <h3>Binance</h3>
+            <dl class="facts">
+              <div class="fact"><dt>First minute</dt><dd data-field="first">...</dd></div>
+              <div class="fact"><dt>Last minute</dt><dd data-field="last">...</dd></div>
+              <div class="fact"><dt>1m rows</dt><dd data-field="rows">...</dd></div>
+              <div class="fact"><dt>Missing minutes</dt><dd data-field="missing">...</dd></div>
+              <div class="fact"><dt>Last sync</dt><dd data-field="sync">...</dd></div>
+            </dl>
+            <p class="card-foot">Every archive checksum verified. Checked against its own candles and TradingView prices. The missing minutes are real exchange outages.</p>
+          </article>
+          <article class="card" data-venue="bybit_btcusdt_perp">
+            <p class="card-kicker">Linear perp · BTCUSDT</p>
+            <h3>Bybit</h3>
+            <dl class="facts">
+              <div class="fact"><dt>First minute</dt><dd data-field="first">...</dd></div>
+              <div class="fact"><dt>Last minute</dt><dd data-field="last">...</dd></div>
+              <div class="fact"><dt>1m rows</dt><dd data-field="rows">...</dd></div>
+              <div class="fact"><dt>Missing minutes</dt><dd data-field="missing">...</dd></div>
+              <div class="fact"><dt>Last sync</dt><dd data-field="sync">...</dd></div>
+            </dl>
+            <p class="card-foot">Checked against its own candles. Prices and volumes match TradingView's BYBIT:BTCUSDT.P, and this is the chart's default.</p>
+          </article>
+        </div>
+        <p class="note">Numbers as of the last export, <span data-total="generated">...</span>.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="eyebrow-bar"></span>How it's kept</div>
+        <h2>Boring rules, <span class="accent">on purpose.</span></h2>
+        <div class="card-grid card-grid-tight">
+          <article class="card">
+            <h3>Closed minutes only</h3>
+            <p>The forming minute is never stored. A bar counts as complete only when a successful fetch really covered it.</p>
+          </article>
+          <article class="card">
+            <h3>Nothing filled in</h3>
+            <p>Raw rows are exactly what the exchange returned. Missing minutes are recorded, never invented.</p>
+          </article>
+          <article class="card">
+            <h3>Bars from real trades</h3>
+            <p>Bars use traded minutes only. Flat no-trade minutes would invent opens and extremes.</p>
+          </article>
+          <article class="card">
+            <h3>No quiet edits</h3>
+            <p>If a closed day changes later, its old file is kept and its revision goes up.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="eyebrow-bar"></span>Where it stands</div>
+        <h2>The data layer is built. <span class="accent">Nothing else is.</span></h2>
+        <div class="status-grid">
+          <div class="card">
+            <h3>Built</h3>
+            <ul class="status-list">
+              <li>A collector for three venues, syncing every 15 minutes.</li>
+              <li>15m, 1H, 4H and 1D bars derived from the minutes.</li>
+              <li>A daily audit against the exchanges' data.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Not built</h3>
+            <ul class="status-list">
+              <li>Wave counting.</li>
+              <li>Statistics on ratios and patterns.</li>
+              <li>Forecasts of any kind.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="lead">What gets built next is not decided.</p>
+      </div>
+    </section>
+
+    <section class="section closing">
+      <div class="section-inner closing-inner">
+        <div class="eyebrow"><span class="eyebrow-bar"></span>The chart</div>
+        <h2>Look at the data <span class="accent">yourself.</span></h2>
+        <p class="lead">Candlesticks for all three venues, on 1D, 4H, 1H and 15m, with no drawings on top.</p>
+        <div class="actions">
+          <a href="chart.html" class="btn btn-dark">Open the chart</a>
+        </div>
+        <p class="note">Research, not trading advice or signals.</p>
+        <div class="divider"></div>
+        <div class="footer-row">
+          <a class="footer-brand" href="https://www.yaga.sh"><img class="footer-mark" src="assets/yaga-mark-dark.webp" width="128" height="128" alt="">Yaga.sh</a>
+          <span class="copyright">© 2026 · elliott.yaga.sh</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
