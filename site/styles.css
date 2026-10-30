@@ -260,14 +260,6 @@ h1, h2 {
 
 /* Status */
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  margin-top: 48px;
-}
-.status-list { list-style: none; margin: 16px 0 0; padding: 0; }
-.status-list li { padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; line-height: 1.5; color: var(--body); }
 
 /* Footer */
 
@@ -300,7 +292,6 @@ h1, h2 {
 .chart-page { display: flex; flex-direction: column; height: 100svh; min-height: 560px; }
 .chart-page .site-header { position: static; }
 .chart-page .site-header-inner { max-width: none; }
-.chart-page .yaga-bar-inner { max-width: none; }
 
 .toolbar {
   display: flex;
@@ -386,8 +377,7 @@ h1, h2 {
 
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; }
-  .status-grid { grid-template-columns: minmax(0, 1fr); }
-  .tiles { grid-template-columns: minmax(0, 1fr); }
+    .tiles { grid-template-columns: minmax(0, 1fr); }
   .tile { border-left: 0; border-top: 1px solid var(--line); }
   .tile:first-child { border-top: 0; }
 }
