@@ -1,4 +1,4 @@
-/** Shared by both pages: stats.json, the bar files (format in src/ewave/ingest/export.py), formatting, site menu. */
+/** Shared by both pages: stats.json, the bar files (format in src/ewave/ingest/export.py), formatting. */
 
 const EW = (() => {
   let statsPromise = null;
@@ -55,9 +55,3 @@ const EW = (() => {
 
   return { loadStats, loadBars, fmtDate, fmtMinute, fmtInt, fmtPrice, fmtTick, fmtVolume };
 })();
-
-const siteMenu = document.querySelector('.site-menu');
-if (siteMenu) {
-  document.addEventListener('click', (e) => { if (!siteMenu.contains(e.target)) siteMenu.open = false; });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') siteMenu.open = false; });
-}
