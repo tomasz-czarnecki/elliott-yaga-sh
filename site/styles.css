@@ -19,6 +19,7 @@
   --gutter: clamp(24px, 4vw, 48px);
   --max: 1200px;
   --header-h: 64px;
+  --bar-h: 40px;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -65,6 +66,44 @@ a { color: var(--ink); }
   .btn-dark:hover { background: var(--accent); }
   .btn-ghost:hover { border-color: var(--ink); }
 }
+
+/* yaga.sh family bar: drawn in yaga.sh's own warm dark palette, so it reads as the parent site */
+
+.yaga-bar { background: #161514; border-bottom: 1px solid #2A2826; }
+
+.yaga-bar-inner {
+  max-width: calc(var(--max) + 2 * var(--gutter));
+  height: var(--bar-h);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.yaga-bar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--bar-h);
+  color: #C4BFB7;
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  transition: color 200ms var(--ease-out);
+}
+.yaga-bar-link strong { color: #F5F4F2; font-weight: 500; }
+.yaga-bar-arrow { display: block; width: 14px; height: 14px; flex: none; transition: transform 200ms var(--ease-out); }
+.yaga-bar-mark { display: block; width: 22px; height: 22px; flex: none; }
+.yaga-bar-note { font-family: var(--mono); font-size: 12px; color: #9A958D; white-space: nowrap; }
+
+@media (hover: hover) {
+  .yaga-bar-link:hover { color: #F5F4F2; }
+  .yaga-bar-link:hover .yaga-bar-arrow { transform: translateX(-3px); }
+}
+@media (max-width: 560px) { .yaga-bar-note { display: none; } }
 
 /* Header */
 
@@ -146,7 +185,7 @@ h1, h2 {
 .hero-grid {
   width: 100%;
   max-width: calc(var(--max) + 2 * var(--gutter));
-  min-height: calc(100svh - var(--header-h));
+  min-height: calc(100svh - var(--header-h) - var(--bar-h));
   margin: 0 auto;
   padding: clamp(48px, 6vw, 96px) var(--gutter);
   display: grid;
@@ -263,6 +302,7 @@ h1, h2 {
 .chart-page { display: flex; flex-direction: column; height: 100svh; min-height: 560px; }
 .chart-page .site-header { position: static; }
 .chart-page .site-header-inner { max-width: none; }
+.chart-page .yaga-bar-inner { max-width: none; }
 
 .toolbar {
   display: flex;
