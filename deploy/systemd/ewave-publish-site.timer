@@ -1,0 +1,11 @@
+[Unit]
+Description=ewave: publish the site data daily at 05:07 UTC (after the audit)
+
+[Timer]
+OnCalendar=*-*-* 05:07:00 UTC
+AccuracySec=1s
+Persistent=true
+Unit=ewave-publish-site.service
+
+[Install]
+WantedBy=timers.target

@@ -69,7 +69,8 @@ Read it with `ewave.data`: `load_1m(venue, start, end)` and `load_bars(venue, tf
 
 ## Site
 Static frontend, no build step, for elliott.yaga.sh: `index.html` (landing, its numbers come from `data/stats.json`), `chart.html` (TradingView Lightweight Charts, vendored in `vendor/`; keep its attribution logo enabled). Style follows yaga.sh, re-tinted to navy.
-- **Export:** `uv run ewave-data export-site [--out DIR]` writes complete bars only to `site/data/` (gitignored): `stats.json` and `bars/{venue}/{tf}.json`. Format is in `src/ewave/ingest/export.py`. 15m is capped to the last 365 days.
+- **Export:** `uv run ewave-data export-site [--out DIR]` writes complete bars only to `site/data/`: `stats.json` and `bars/{venue}/{tf}.json`. Format is in `src/ewave/ingest/export.py`. 15m is capped to the last 365 days.
+- **Publish:** `site/data/` is committed, because Vercel deploys `site/` from git and sees nothing else. `deploy/publish-site.sh` exports, commits and pushes; the `ewave-publish-site` timer runs it daily on the machine that runs the collector. A refresh adds about 20 KB to the packed repo.
 - **Preview:** `python3 -m http.server 8082 --bind 127.0.0.1 --directory site`
 - **Checks:** `cd tools && npm install && node shots_site.mjs` (screenshots, console errors, failed requests; dev only, not needed to deploy).
 
