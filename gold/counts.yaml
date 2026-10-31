@@ -1,0 +1,58 @@
+# His hand-labelled counts: a regression test that the engine can at least reproduce his reading, not ground truth (master
+# plan, gold/). `ewave-counts gold` prints pass or fail per entry with its rank and axis scores; tests/test_gold.py runs them.
+#
+# To add one, copy an entry: one entry per count. Each label lists its acceptable pivots, a list when he allows more than
+# one. Times are UTC, prices as the bars print them. A pivot matches within the entry's `tol_bars` bars of its frame and
+# `tol_price` (a share of price).
+#   checks:
+#     enumerate   the engine finds this labelling among the legal readings of that frame
+#     rank_first  unconstrained, it ranks first among the readings of that frame that start at its 0 and reach its last label
+#     in_tree     in the premise tree, kept children show it wherever the parent reading has room for it
+#     kept        run without the premise, the root keeps a reading of this pattern between its 0 and its last label
+#     inside      each wave of each variant against the inside rule: what it must hold, what was found, and where (rules/counts.yaml: inside)
+#   as_of: the data is cut here, so that later bars cannot move the regression. `ewave-counts gold --latest` runs on today's bars.
+version: gold-1
+counts:
+  - id: 4h-impulse-2026-07-to-09
+    added: 2026-10-30
+    by: Tomasz
+    venue: bybit_btcusdt_perp
+    tf: 4h
+    pattern: impulse
+    direction: up
+    as_of: "2026-10-30T23:45"
+    tol_bars: 1
+    tol_price: 0.0005
+    labels:
+      "0": [{t: "2026-07-01T01:00", p: 57755.8}]
+      "1": [{t: "2026-07-21T14:00", p: 66937.7}]
+      "2": [{t: "2026-08-01T18:00", p: 62240.0}, {t: "2026-08-14T14:00", p: 62505.1}]
+      "3": [{t: "2026-08-28T01:00", p: 81499.9}, {t: "2026-09-03T21:00", p: 82276.6}]
+      "4": [{t: "2026-09-15T18:00", p: 74919.6}]
+      "5": [{t: "2026-09-21T20:00", p: 87383.6}]
+    checks: [enumerate, rank_first, in_tree, inside]
+    note: >
+      "I do not know how you recognised it like this, it is clearly 5 waves". His reply to r2's 4H node 1d.3.1, "Combination
+      up finished at 87,384". He drew 2 at the Aug 14 low; the Aug 1 low is 265 lower, so 2 is Aug 1, or W2 is a running flat
+      ending Aug 14. Lily measured every hard rule passing for both 3s.
+  - id: 1d-impulse-2022-to-2025
+    added: 2026-10-30
+    by: Tomasz
+    venue: bybit_btcusdt_perp
+    tf: 1d
+    pattern: impulse
+    direction: up
+    as_of: "2026-10-30T23:45"
+    tol_bars: 1
+    tol_price: 0.0005
+    labels:
+      "0": [{t: "2022-11-21", p: 15440.0}]
+      "1": [{t: "2023-04-14", p: 31061.7}, {t: "2023-07-13", p: 31843.9}]
+      "2": [{t: "2023-09-11", p: 24853.4}, {t: "2023-08-17", p: 24200.9}]
+      "3": [{t: "2025-01-20", p: 109951.7}]
+      "4": [{t: "2025-04-07", p: 74456.2}]
+      "5": [{t: "2025-10-06", p: 126150.0}]
+    checks: [kept, inside]
+    note: >
+      The macro count behind rules/premise.yaml, run without the premise. His chart: a 5-wave impulse at daily degree from the
+      Nov 2022 low to the Oct 2025 top, red line at the top.

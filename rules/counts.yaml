@@ -1,0 +1,282 @@
+# Top-down count board. Every threshold, ladder, weight and limit lives here; the version is stored with every output.
+# "sec N" points to a section of the NewWave compact rulebook (commercial, kept out of this repo: numbers and section
+# ids only; IMP-T, FIB-T and the like are ids of the complete reference). Anything marked "ours" is a decision of this
+# project; research/counts-r1.md to counts-r4.md explain each one.
+version: counts-r4.0
+venue: bybit_btcusdt_perp      # his chart: BYBIT:BTCUSDT.P
+
+tree:
+  roots: ["1d", "12h"]         # 1D is the default root, 12H the alternative (12H resampled from 1H, UTC 00:00 and 12:00)
+  ladder: ["4h", "1h", "15m"]  # his three frames, in the x4 ladder of sec 5
+  keep_root: 3                 # top counts at the root
+  keep_child: 1                # top counts per parent
+  max_nodes: [3, 6, 8, 8]      # ours: a readable tree, root / 4H / 1H / 15m
+  recent_bars_days: 5          # ours: bars carried in counts.json so that the chart reaches the count's as-of time
+  shortlist: 40                # ours: only this many candidates per window get the costly sub-wave check
+  inside_tf: {"1d": ["4h"], "12h": ["4h"], "4h": ["4h", "1h"], "1h": ["1h", "15m"], "15m": ["15m"]}  # ours: where a finished wave is read for what is inside it. 4H and below read on their own frame first, as he reads a chart, then one frame down (sec 0: "drop tf")
+  inside_depth: 2              # ours: how many levels of a finished wave's inside are labelled
+  inside_min_bars: 12          # ours, as in sec 0's "drop tf": a wave shorter than this on that frame has no visible inside
+
+root:
+  lookback_days: 1500          # ours: one 4-year cycle (gaps 1431 and 1437 days, research/cycles-r1.md), so it reaches the last bear low
+  min_span_bars: {"1d": 45, "12h": 90}  # ours: a root structure spans at least this much, else it is not a root-degree move
+  flat_anchor_back: 2          # ours: a flat's origin may sit this many same-kind pivots before an unbroken extreme (its B)
+
+frames:
+  # k: zigzag thresholds in ATR(14) of log price, largest first. horizon_bars: time limit of the barrier odds.
+  # vol_bars: realised volatility window. sub: where sub-waves are checked. log_fib: Fib levels in log as well (sec 4).
+  # move_table: expected move for a signal on this frame (sec 5); the book has no 1H or 12H row, so none is invented.
+  # time_tf: the finer frame that dates this frame's pivots, because a candle bounds time resolution (FIB-T6). 15m has no
+  # finer frame here, so its own bar is its resolution.
+  "1d":  {k: [8, 6, 5, 4],              horizon_bars: 120, vol_bars: 30,   sub: "4h", time_tf: "1h",  log_fib: true,  move_table: [0.20, 0.30]}
+  "12h": {k: [11, 8, 7, 5.5],           horizon_bars: 180, vol_bars: 60,   sub: "4h", time_tf: "1h",  log_fib: true}
+  "4h":  {k: [16, 12, 8, 6, 5, 4, 3],   horizon_bars: 150, vol_bars: 84,   sub: "1h", time_tf: "15m",  log_fib: true,  move_table: [0.12, 0.15]}
+  "1h":  {k: [16, 12, 8, 6, 5, 4, 3],   horizon_bars: 150, vol_bars: 336,  sub: "15m", time_tf: "15m", log_fib: false}
+  "15m": {k: [16, 12, 8, 6, 5, 4, 3],   horizon_bars: 150, vol_bars: 1344, sub: "15m", time_tf: "15m", log_fib: false, move_table: [0.05, 0.07]}
+
+odds:
+  min_target_sigmas: 3         # ours: a level closer than this many bars of volatility is already there, not a target
+  min_window_bars: 5           # ours: a time window closer than this says nothing as a horizon; the frame's horizon_bars is used
+
+pivots:
+  atr_bars: 14
+  rsi_bars: 11                 # sec 5
+  max_pivots: 23               # ours: pivots per window; more than this and that threshold is too small for the window
+  max_span: 17                 # ours: legs one labelled wave may span
+  scales_per_window: 3         # ours: how many thresholds are tried per window
+  hidden_sub: true             # a 5 may show as 3 legs when its small correction stayed under the threshold (sec 0)
+
+# Hard rules. Break one and the count dies. A length rule breaks only when it breaks on both log and linear (sec 4).
+rules:
+  c_min_ext: 0.618             # sec 3: C at least this extension of A
+  y_min_ext: 0.618             # sec 3: Y at least this extension of W
+  x_min_ret: 0.01              # sec 3
+  flat_b_max: 1.618            # sec 3: at this retracement it is not a B
+  triangle_e_min: 0.382        # sec 3
+  diagonal_w5_min: 0.618       # sec 2
+  truncated_w5_min: 0.618      # ours: the book allows a truncated W5 (sec 1) with no number; this one mirrors sec 2's W5 against W4
+
+# Round 4: what is inside a finished wave is a rule (IMP-R1..R6, DIAG-R5, COR-0, FLAT-R1 R2, TRI-R1 R2, CPX-R1 R2, sec 0
+# UNSPOKEN R1 R2). The table of what each wave must hold is `grammar` below; research/counts-r4.md lists its sources.
+# A wave fails only when it is readable and does not admit its form, and a wave passes if ANY rule-legal labelling exists.
+inside:
+  # Where a wave is searched: its own frame first, then down (sec 0 "drop tf"). 1m is built from load_1m, only when nothing
+  # coarser read the wave. Ours: the sec 5 ladder, plus 1m because a 15m wave has to be read on something.
+  frames: {"1d": ["1d", "4h", "1h", "15m"], "12h": ["12h", "4h", "1h", "15m"], "4h": ["4h", "1h", "15m", "1m"], "1h": ["1h", "15m", "1m"], "15m": ["15m", "1m"], "1m": ["1m"]}
+  ks: [16, 12, 10, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.75, 1.5, 1.25, 1]  # ours: zigzag thresholds in ATR(14) of that frame. 1 ATR is the noise floor
+  min_bars: 12                 # ours, r3's inside_min_bars: under this on a frame, a wave has no visible inside there
+  max_bars: 3000               # ours: a wave longer than this on a frame is not searched on it: the frames above it already saw that resolution
+  max_pivots: 33               # ours: more than this on one rung and that rung is too fine for this wave
+  depth: 2                     # sec 0: the inside 5's largest wave must itself hold a 5, or be unreadable (FND-8)
+  clear_margin: 0.02           # sec 0 "3-or-5 unreadable, hold both"; the r3 leg_form margin, fit points between the best 5 and the best 3
+  minute_warmup_days: 1        # ours: days before a wave's first day that warm up ATR(14) on 1m
+
+# What may fill each wave of each pattern (sec 1, 2, 3). A single leg passes the enumerator, since its inside is not visible
+# at that threshold; the inside rule above then reads it. Corrective waves of a flat or combination stay corrective; only a
+# zigzag's A and C are motive.
+grammar:
+  impulse:
+    "1": [impulse, leading_diagonal]
+    "2": [zigzag, flat, combination]
+    "3": [impulse]
+    "4": [zigzag, flat, triangle, combination]
+    "5": [impulse, ending_diagonal]
+  leading_diagonal:
+    "1": [impulse, zigzag]
+    "2": [zigzag]
+    "3": [impulse, zigzag]
+    "4": [zigzag]
+    "5": [impulse, zigzag]
+  ending_diagonal:
+    "1": [zigzag]
+    "2": [zigzag]
+    "3": [zigzag]
+    "4": [zigzag]
+    "5": [zigzag]
+  zigzag:
+    "A": [impulse, leading_diagonal]
+    "B": [zigzag, flat, triangle, combination]
+    "C": [impulse, ending_diagonal]
+  flat:
+    "A": [zigzag, flat, combination]
+    "B": [zigzag, flat, combination]  # TRI-R8 also finds triangles in a B and FLAT-R1 bars one only from A. Left as r3 had it: research/counts-r4.md says what adding it changes
+    "C": [impulse, ending_diagonal]
+  triangle:
+    "A": [zigzag, flat, combination]
+    "B": [zigzag, flat, combination]
+    "C": [zigzag, flat, combination]
+    "D": [zigzag, flat, combination]
+    "E": [zigzag, flat, triangle, combination]
+  combination:
+    "W": [zigzag, flat, combination]
+    "X": [zigzag, flat, triangle, combination]
+    "Y": [flat, triangle, combination]   # sec 3: a zigzag cannot be Y (the book's form list says otherwise once; the R wins)
+  triple_combination:                    # sec 3: W-X-Y-X-Z, triangles only in X or Z, never in Y; "triple three = 3 flats (rare)"
+    "W": [zigzag, flat, combination]
+    "X": [zigzag, flat, triangle, combination]
+    "Y": [flat, combination]
+    "X2": [zigzag, flat, triangle, combination]
+    "Z": [flat, triangle, combination]
+  # What follows a finished structure: a 5 is the start or the end of something (sec 0); both move against it.
+  after_motive: [zigzag, flat, triangle, combination, impulse, leading_diagonal]
+  after_corrective: [impulse, leading_diagonal, zigzag, flat, triangle, combination]
+
+# Fib templates (sec 1, 3, 4). Zones say where the running wave should end; targets say where the next wave should go.
+levels:
+  w2_ret: [0.382, 0.5, 0.618]
+  w4_ret: [0.236, 0.382, 0.5]
+  w3_ext: [1.618, 2.618]
+  w5_from_w3: {"1.618": 2.236, "2.618": 3.236, "3.236": 4.236}   # sec 1 add-one
+  w5_014: [0.618, 1.0]
+  zz_b_ret: [0.382, 0.5, 0.618, 0.786]
+  flat_b_ret: [0.786, 1.0, 1.236, 1.382]
+  c_ext_zigzag: [0.618, 1.0, 1.236, 1.618]
+  c_ext_flat: [0.618, 1.0, 1.618, 2.236]
+  x_ret: [0.5, 0.618, 0.786]
+  y_ext: [0.618, 1.0, 1.236]
+  z_ext: [1.0, 1.236, 1.382]      # sec 3: Z typically 1.236-1.382 of W, ceiling 1.618
+  tri_ret: [0.786]
+  tri_e_ext: [0.618]
+  diag_w4_ret: [0.382, 0.5, 0.618, 0.786]   # ours: the book gives no W4 pull for a diagonal, only that it stays above W2's end
+  diag_w5_ext: [1.0, 1.236, 1.618]
+  next_degree_ret: [0.5, 0.618]   # sec 1: next-degree W2, pull 0-5
+  after_correction_ret: [0.618, 1.0] # ours: the book has no pull for the leg after a finished correction; 1.0 is the prior extreme
+
+# Fibonacci time (sec 1 C, sec 4, IMP-T1..T6, FIB-T1..T10). Multiples of a base wave. Windows say when the running wave
+# should end. Fib Time Zone (FTZ) levels are given as the time they mean, so the tool's 1.25 is 0.25 here: FIB-T2's "level
+# minus one". Trend-Based Fib Time (TBFT) levels are read as they are.
+# zero: the multiple at which a running or finished wave has lost all time credit.
+time:
+  windows:
+    w2: {tool: "Fib Time Zone", levels: [0.25, 0.33, 0.618, 1.0], zero: 1.618}         # IMP-T3, FIB-T3/T4; zero is ours: 1.618 x W1 is no W2 at all
+    w4: {tool: "Fib Time Zone", levels: [0.25, 0.33, 0.618, 1.0], zero: 1.618}         # IMP-T4, same
+    w3: {tool: "Trend-Based Fib Time", levels: [1.0, 1.618, 2.236], zero: 5.854}       # IMP-T1; zero is ours: 2.618 x the largest template
+    w5: {tool: "Trend-Based Fib Time", levels: [0.618, 1.0], zero: 2.618}              # IMP-T2, IMP-T5; zero is ours: 2.618 x the largest template
+    b:  {tool: "Fib Time Zone", levels: [0.25, 0.33, 1.0, 2.618, 4.0], zero: 6.854}    # FIB-T3, FIB-T5: up to 4 x, the template's 2.618 and 4 at face value as the book says; zero is ours
+    x:  {tool: "Fib Time Zone", levels: [0.25, 0.33, 1.0, 2.618, 4.0], zero: 6.854}    # CPX-G6: an X goes like a B
+    c:  {tool: "Trend-Based Fib Time", levels: [0.618, 1.0], zero: 2.618}              # correction template; zero is ours
+    y:  {tool: "Trend-Based Fib Time", levels: [0.618, 1.0], zero: 2.618}              # CPX-G3 "W and Y as A and C do", same template
+    diag_w4: {tool: "Fib Time Zone", levels: [0.618, 1.0], zero: 2.618}                # DIAG-G3: contracting W4 under W2; expanding may pass it, hence the wider zero. Base is W2, not W3
+    after: {tool: "Fib Time Zone", levels: [0.25, 0.33, 0.618, 1.0], zero: 2.618}      # next-degree correction, pull 0-5 (sec 1) in time. After a finished correction the book has no tool: same one, ours
+  # r1's single running_time_ceiling (4.236 for every wave) is gone: each window's own zero above replaces it.
+  band_inner: 0.6              # ours: credit for a ratio inside a template's range but on no level of it
+  band_fade: 2.618             # ours: outside the range the credit fades to 0 over this factor, straight in log. A clear miss scores 0
+  ac_fade: 2.0                 # ours: partner legs of a correction are tighter (COR-4, CPX-G3): C or Y at 2 x the template's edge, or under half of it, are no partners
+  resolution_slack: 2          # FIB-T6: two pivots, each dated to +- one measuring candle
+  # FIB-T1 "a violent move in price is paid for in sideways time", IMP-T1 "1.0 in a fast market", E5-5 a fifth "squeezes up fast":
+  # speed: what counts as fast, in multiples of the base wave's speed, log price per bar. credit: what a fast wave's shortfall
+  # in time still earns, the same as landing inside a template's range but on no level of it. w4_limit, w4_zero: how long a W4
+  # may run after a fast W3, the two next levels of the book's W2 and W4 scale. All three numbers are ours.
+  fast: {speed: 1.618, credit: 0.6, w4_limit: 1.618, w4_zero: 2.618}
+  z_ext: [1.0, 1.236, 1.382, 1.618]      # sec 3: Z against W, its templates and ceiling
+  ceiling: 1.618                         # sec 3: a zigzag's C that "hits 1.618: double-check impulsive"; Y "ceiling 1.618 (past it: W3, C, or flat more likely)". The discriminator between a 5 and a 3
+  w4_w2: {low: 0.382, high: 2.618, fade: 2.618}  # IMP-N8, FIB-T10: both alternation and equality count; only "drastically out of symmetry" loses credit. The numbers are ours
+  whole: {lookback_days: 1500, min_bars: 30, minimum: 0.25, pocket: 0.33, w2_low: 0.618, w2_high: 1.0, b_max: 4.0, zero: 6.854, pocket_f: 0.3, shallow_f: 0.6, long_f: 0.8}  # FIB-T3/T5 on a finished root correction; finding the wave it corrects is ours
+  ac_speed: {limit: 2.0, zero: 4.0}      # COR-4: A and C similar in speed. The numbers are ours (r1 had the limit only)
+  retrace: {zero: 2.618}                 # IMP-T6, STR-C8: past its own duration without being retraced, credit fades to 0 at this multiple (ours)
+  nest_fade: 1.0                         # ours: child and parent windows apart by this many parent's base waves lose all credit
+  sub_w2: {tie: 0.5, zero: 1.618}        # STR-C8, CONFLICT-21: sub-wave 2 against the primary W2. A tie is a warning, longer kills the impulse reading (here it ranks: the book's kill is a strategy rule, not a count rule); zero is ours
+  past_end: {limit: 0.05, zero: 0.146}   # ours: how far a correction's inside may go past the end of the wave it corrects, as a share of that wave in log. The book allows it in an expanded flat (sec 3): a B of 1.236-1.382 of a first leg about a quarter of the wave gives 0.06-0.1, its 1.618 ceiling about 0.15. At zero that wave was not over
+  max_crosshairs: 9                      # ours: price x time points drawn per count
+  # FIB-T3, FIB-T4, BTC-3: a correction takes at least 25% of the wave it corrects. A strong guideline since round 4, no kill:
+  # the course files it under CONVENTION, "short: wrong pivots or unfinished", and about 63% of mechanical BTC W4s break it, as
+  # do random paths (research/model-options/02-empirical.md B3). Credit is (time / minimum) squared, ours. tolerance_bars is
+  # the measuring candle (FIB-T6): 1H on 1D, 15m on 4H.
+  minimum: {share: 0.25, tolerance_bars: 1}
+  hit_tol: 0.06                          # ours: the running extreme sits on a crosshair when within this share on both axes (same as near_tol)
+  partner_margin: 0.1                    # ours: FIB-T8 "better in both wins": a pairing is dropped only when another beats it by this much on both time and price
+
+# Rulebook fit, round 2. Three axes, each judged on its own, and a count needs all three. Each item is judged 0 to 1 only
+# where it can be judged.
+#   axis = (sum of w x f + evidence x prior) / (sum of w + evidence)
+#   fit  = geometric mean of the three axes
+# The axis keeps r1's lesson that a count with little to judge must not outrank a fully labelled one: with few items it
+# stays near the prior. The geometric mean is what r1 lacked: its plain sum let a count that fails time be bought back by
+# price. A 1% loss on any axis costs the same whatever the others are, so no axis can pay for another; a min() would also
+# do that but would ignore everything except the worst axis.
+# Round 3: "rules eliminate, guidelines rank" (sec 0, FND-4). r2's veto, which capped an axis at 0.2 when one named check
+# failed, is gone. Fib time stays a full-weight axis, graded, because the book marks it a convention (sec 4 time tools).
+# Nothing here is evidence of a win chance: research/model-options
+# found no lift from these items over volatility (0 of 60), and Fib time templates hit at random-path rates (02-empirical B3).
+#   credit: both (default), penalty (a pass says nothing, a miss costs: "has not failed yet" is no evidence),
+#           bonus (a hit counts, a miss says nothing: hitting a crosshair is rare by construction).
+#   named: a pattern check shown to the reader as failed at or under fail_at. It costs what its weight costs and no more.
+fit:
+  prior: 0.35             # ours: a rough middle of how often an item fires by luck (W2 window 17.5%, W4 window 41% on random paths, research/model-options); r1's "chance"
+  evidence: 3.0           # ours: pseudo-weight of the prior
+  fail_at: 0.05           # ours
+  near_tol: 0.06          # ours: within 6 percent of a Fib number counts in full
+  near_fade: 0.25         # ours: credit fades to 0 at 25 percent
+  share_beta: 7.0         # ours: fit share = exp(beta x fit) over all legal states
+  other_floor: 0.10       # ours: at least this share stays "other/unclear", for what the enumerator cannot see
+  items:
+    # price
+    w2_ret: {axis: price, w: 1.0, sec: "1 C"}
+    w3_ext: {axis: price, w: 1.0, sec: "1 C"}
+    w4_ret: {axis: price, w: 1.0, sec: "1 C"}
+    w5_ext: {axis: price, w: 1.0, sec: "1 C"}
+    w5_past_w3: {axis: price, w: 0.7, sec: "1 G: truncation is possible"}
+    w1_not_longest: {axis: price, w: 0.3, sec: "1 G"}
+    diag_w3: {axis: price, w: 0.7, sec: "2 G K"}
+    diag_w5: {axis: price, w: 0.7, sec: "2 G K"}
+    zz_b: {axis: price, w: 1.0, sec: "3 G"}
+    zz_c: {axis: price, w: 1.0, sec: "3 G"}
+    zz_c_past_a: {axis: price, w: 0.7, sec: "3 G"}
+    flat_b: {axis: price, w: 1.0, sec: "3"}
+    flat_c: {axis: price, w: 1.0, sec: "3"}
+    tri_legs: {axis: price, w: 1.0, sec: "3 G"}
+    x_ret: {axis: price, w: 1.0, sec: "3 G K"}
+    y_ext: {axis: price, w: 1.0, sec: "3 G"}
+    running_depth: {axis: price, w: 0.7, sec: "1, 3", credit: penalty}
+    tf_move: {axis: price, w: 0.5, sec: "5 B", credit: penalty}
+    parent_confluence: {axis: price, w: 0.5, sec: "1", credit: bonus}
+    z_ext: {axis: price, w: 1.0, sec: "3 G"}
+    past_ceiling: {axis: price, w: 1.0, sec: "3 G: the look-alike test of a 5 and a 3", named: true}
+    premise_ret: {axis: price, w: 1.0, sec: "1 C: next-degree W2, pull 0-5"}
+    inside_price: {axis: price, w: 2.0, sec: "0, 6: a labelled 5 inside a wave. Two items, ours: it was judged on about ten"}
+    inside_time: {axis: time, w: 2.0, sec: "0, 6: a labelled 5 inside a wave. Two items, ours: it was judged on about ten"}
+    # time: the main templates weigh the same as the price items
+    w2_time: {axis: time, w: 1.0, sec: "IMP-T3", named: true}
+    w3_time: {axis: time, w: 1.0, sec: "IMP-T1, FIB-T1"}
+    w4_time: {axis: time, w: 1.0, sec: "IMP-T4, FIB-T1", named: true}
+    w5_time: {axis: time, w: 1.0, sec: "IMP-T2, IMP-T5, E5-5"}
+    w3_steepest: {axis: time, w: 0.5, sec: "1 G, IMP-T5"}
+    w4_w2_time: {axis: time, w: 0.5, sec: "IMP-N8, FIB-T10"}
+    w4_split: {axis: time, w: 0.3, sec: "IMP-G15", credit: bonus}
+    diag_time: {axis: time, w: 0.7, sec: "DIAG-G3"}
+    ac_time: {axis: time, w: 1.0, sec: "FIB-T correction template, COR-4", named: true}
+    ac_speed: {axis: time, w: 0.5, sec: "COR-4"}
+    b_time: {axis: time, w: 1.0, sec: "FIB-T5", named: true}
+    x_time: {axis: time, w: 1.0, sec: "CPX-G6", named: true}
+    wy_time: {axis: time, w: 1.0, sec: "CPX-G3", named: true}
+    whole_time: {axis: time, w: 1.0, sec: "FIB-T3 T5; the corrected wave is ours", named: true}
+    retrace_time: {axis: time, w: 1.0, sec: "IMP-T6, STR-C8"}
+    running_time: {axis: time, w: 1.0, sec: "sec 1 C, 4", credit: penalty, named: true}
+    crosshair: {axis: time, w: 0.7, sec: "FIB-T9", credit: bonus}
+    nest_time: {axis: time, w: 0.7, sec: "FIB-T9 across degrees; the test is ours", credit: penalty}
+    sub_w2_time: {axis: time, w: 1.0, sec: "STR-C8", named: true}
+    premise_time: {axis: time, w: 1.0, sec: "FIB-T3 T5, against the five he gave"}
+    min_time: {axis: time, w: 2.0, sec: "FIB-T3 T4, IMP-T3 T4: a strong guideline since r4. Two items, ours", credit: penalty, named: true}
+    # structure
+    channel: {axis: structure, w: 0.5, sec: "1 G"}
+    line_24: {axis: structure, w: 0.5, sec: "1"}
+    alternation: {axis: structure, w: 0.4, sec: "1 K: alternation or equality, both count"}
+    past_end: {axis: structure, w: 1.0, sec: "ours, from sec 3's expanded B pocket", credit: penalty, named: true}
+    tdi_w3: {axis: structure, w: 0.5, sec: "5"}
+    tdi_w3_70: {axis: structure, w: 0.3, sec: "5"}
+    tdi_w2_zone: {axis: structure, w: 0.3, sec: "5"}
+    tdi_35_div: {axis: structure, w: 0.7, sec: "5"}
+    diag_tdi: {axis: structure, w: 0.5, sec: "2 G"}
+    diag_frame: {axis: structure, w: 0.7, sec: "2 B: far more common at 15m and under"}
+    subwaves: {axis: structure, w: 1.5, sec: "0, 6"}
+    leg_form: {axis: structure, w: 1.5, sec: "0 R1 R2, 3: only impulse W1 and zigzag A start with a 5; 3-or-5 unreadable holds both"}
+    inside_structure: {axis: structure, w: 2.0, sec: "0, 6: a labelled 5 inside a wave. Two items, ours: it was judged on about ten"}
+    triple_rare: {axis: structure, w: 2.0, sec: "3, conflict 9: a triple three is rare, simple first. The weight is ours: it must beat the double three when both read the same move"}
+    anchor_major: {axis: structure, w: 1.0, sec: "6: ours, the root starts at a clear higher-degree extreme"}
+    corrective_tiebreak: {axis: structure, w: 0.3, sec: "posture: unsure means corrective"}
+  leg_form: {margin: 0.02, fade: 0.1}    # ours: within margin a wave's 3 and 5 readings are "unreadable: hold both" (sec 0); fade: how far past it a label loses all credit
+  thresholds:
+    tdi_w3_70: 70
+    tdi_w2_hold: 40
+    tdi_bear_zone: 60
+    channel_tol: 0.15     # ours: W5 within this share of its own length from the channel line

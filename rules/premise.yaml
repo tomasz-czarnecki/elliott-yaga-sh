@@ -1,0 +1,34 @@
+# The premise. His input, not a search result: the engine does not re-count anything before the red line, it only counts
+# what came after it. Edit this file to change it; version and digest are stored with every output.
+#
+# His words, 2026-10-30: "So the thing is we have a very clear assumption: everything before was 5 waves up and now we are
+# in a correction going down. Before the 5-year or around 4-year cycle finished, we don't need to touch anything before
+# what we are interested in: looking for trades in after the red line"
+#
+# Times are UTC, prices are Bybit perp 1D highs and lows. `alt` holds the other pivots the label could sit on: drawn nowhere
+# as labels, used only to say which rule notes depend on the choice.
+version: premise-1.0
+owner: Tomasz
+added: 2026-10-30
+active: true                # false: the tree goes back to searching every root
+venue: bybit_btcusdt_perp
+statement: "5 up ended 126,150 on 2025-10-06; counting the correction since"
+degree: "above the 1D root"
+pattern: impulse
+direction: up
+labels:
+  "0": {t: "2022-11-21", p: 15440.0}
+  "1":
+    t: "2023-04-14"          # the high he drew
+    p: 31061.7
+    alt: [{t: "2023-07-13", p: 31843.9, note: "the higher high, Lily's pivot"}]
+  "2":
+    t: "2023-09-11"          # the low he drew
+    p: 24853.4
+    alt: [{t: "2023-08-17", p: 24200.9, note: "the lower wick on Bybit, Lily's pivot"}]
+  "3":
+    t: "2025-01-20"
+    p: 109951.7
+    alt: [{t: "2024-12-17", p: 108421.6, note: "he drew 3 at the Dec 2024 / Jan 2025 high"}]
+  "4": {t: "2025-04-07", p: 74456.2}
+  "5": {t: "2025-10-06", p: 126150.0}   # the red line
