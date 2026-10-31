@@ -1,0 +1,82 @@
+# Cycle marking rules. Every window, tolerance, threshold and signal choice lives here; the version
+# is stored with every output. Source of the method: Camel Finance, "An Introduction to Trading
+# Cycles" (section numbers below). Anything marked "ours" is a decision of this project, not the
+# book's; research/cycles-r1.md explains each one.
+version: cycles-r1.0
+
+series:
+  venue: bitstamp_btcusd      # analysis series; the marks are drawn on any venue's chart, dates align
+  stats_start: "2013-03-01"   # daily/weekly marks and statistics start here (ours: before it, mostly no-trade minutes)
+
+levels:
+  fouryear:
+    # Bear-market trough: lowest low between an all-time high and the day price trades above it again.
+    # Ours: the thresholds keep exactly the deep, long bears. n=3 in the whole history, a pattern, not a statistic.
+    drawdown_min: 0.70        # completed bears only count at this depth or more (low vs ATH)
+    ath_to_low_min_days: 300  # and only if the low came this long after the ATH
+    book_years: 4             # section 9, for reference; the zone uses measured gaps
+
+  weekly:
+    window_days: [168, 294]   # section 9: 24-42 weeks
+    tolerance: 0.10           # section 10: +-10 percent
+    swing_k_days: 14          # ours: a candidate is the lowest low within +-k days
+    depth_window_days: 100    # ours: depth = the smaller rise to the highest high within this many days on each side
+    snap_days: 14             # ours: a chosen low moves to the lowest low within +-this many days
+    cycles_per_parent: [4, 10] # ours: weekly cycles per 4-year cycle, soft (book gives no number)
+
+  daily:
+    window_days: [54, 66]     # section 9
+    tolerance: 0.10           # section 10
+    swing_k_days: 3
+    depth_window_days: 30
+    snap_days: 7
+    cycles_per_parent: [3, 6] # sections 1 and 10: 3-5, up to 6
+
+dp:
+  # score = sum(depth of each chosen low) - penalties, all in units of log price. Ours.
+  gap_penalty: 3.0        # per (distance outside the tolerated window / window centre). Soft, so that the
+                          # 20-30 percent of lows the book places outside the window (section 2) stay possible.
+  undercut_penalty: 5.0   # per log unit a skipped low sits below both chosen ends of a cycle (a cycle low is the
+                          # lowest point of its stretch, section 3; the 2025-11-21 low was skipped at 1.0)
+  node_cost_quantile: 35  # a low must beat this quantile of all candidate depths to add score
+  count_penalty: 0.25     # per cycle outside cycles_per_parent
+  count_hard_margin: 4    # never more than cycles_per_parent max + this
+
+cycle:
+  mid_band: 0.05          # ours: top within +-5 percent of the cycle length around the midpoint = mid translated
+  hcl_band: [0.25, 0.75]  # ours: where a half-cycle low is looked for, as a fraction of the cycle
+  hcl_clear_days: 3       # ours: it must be the lowest low within +-this many days, else there is no clear HCL
+
+live:
+  # Walk-forward state machine, one per level. Sees each bar only once it has closed.
+  signals: [swing_low, sma] # section 6: any one confirms. Oscillator and trendline are left out (ours).
+  sma_period: 10            # section 6.2: 10 day; weekly level uses 10 weeks on Monday-based UTC weeks
+  swing_low_require_open_above_body: false
+                            # Section 6.1 calls the open condition usual, not required. BTC trades 24/7, so a day opens
+                            # at the previous close and can almost never open above a red body. See research/cycles-r1.md.
+  min_gap_fraction: 0.75    # ours: no low before last low + this x window start
+  candidate_lookback_fraction: 0.17
+                            # ours: a candidate must be the lowest low of the last (this x window centre): 10 days at
+                            # the daily level (the SMA's own span), about 6 weeks at the weekly level. Section 6.1
+                            # suggests about a month; 0.5 (a month) missed higher lows and left live cycles of up to
+                            # 1,039 days. Comparison in research/cycles-r1.md.
+  candidate_since_top: true # ours: a new high after a candidate drops it; the low must belong to the current pullback
+  sma_requires_cross: true  # section 6.2: price has to cross the SMA, not just sit above it. A close at or below the SMA
+                            # since the cycle top is enough: a V-shaped low (section 11.3) may close above it on its own bar.
+  revise_within_fraction: 0.5
+                            # ours: an undercut within (this x window start) of a confirmed low means it was not
+                            # the cycle low: logged as a revision. A later undercut is a failed cycle (section 2).
+  match_tolerance_days: {daily: 3, weekly: 7, fouryear: 7} # live low = hindsight low if this close
+
+zones:
+  percentiles: [25, 75]   # depth range of the price box
+  min_samples: 8          # fewer past cycles of the same translation: use all translations of the level
+  fouryear_time: [gap_from_last_low, ath_to_low]  # measured, both drawn as one hull; n is printed with them
+
+null_model:
+  paths_shuffled: 200
+  paths_block: 200
+  block_days: 20          # block bootstrap keeps volatility clustering up to about this length
+  seed: 20261030
+  workers: 2              # shared machine
+  unconstrained_swing_k: {daily: 14, weekly: 60} # consecutive plain swing lows, no window used in picking them
