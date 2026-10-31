@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "polars>=2.0,<2.1",
     "httpx==0.28.1",
+    "pyyaml>=6,<7",
 ]
 
 [dependency-groups]
@@ -17,6 +18,8 @@ dev = [
 
 [project.scripts]
 ewave-data = "ewave.ingest.cli:main"
+ewave-cycles = "ewave.cycles.cli:main"
+ewave-counts = "ewave.counts.cli:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -12,3 +12,9 @@ build/
 
 # dev tooling
 node_modules/
+
+# private until cycles go public: never committed, never published
+site/data/local/
+
+# rebuildable caches (the inside verdicts of finished waves)
+.cache/

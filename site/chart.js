@@ -100,6 +100,8 @@ function syncControls() {
   markSeg($('seg-scale'), scaleNow());
   const q = new URLSearchParams({ venue: state.venue, tf: state.tf });
   if (state.scale) q.set('scale', state.scale);
+  globalThis.EWCycles?.addParams(q);
+  globalThis.EWCounts?.addParams(q);
   history.replaceState(null, '', `?${q}`);
 }
 
@@ -187,6 +189,8 @@ async function load() {
   renderFoot();
   showMessage('');
   root.dataset.chartState = 'ready';
+  globalThis.EWCycles?.onBars();
+  globalThis.EWCounts?.onBars();
 }
 
 chart.subscribeCrosshairMove((p) => {

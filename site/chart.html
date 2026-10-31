@@ -24,6 +24,8 @@
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
   <script src="common.js" defer></script>
   <script src="chart.js" defer></script>
+  <script src="cycles.js" defer></script>
+  <script src="counts.js" defer></script>
 </head>
 <body class="chart-page">
   <header class="site-header">
@@ -42,13 +44,21 @@
     <div class="seg" id="seg-venue" role="group" aria-label="Venue"></div>
     <div class="seg" id="seg-tf" role="group" aria-label="Timeframe"></div>
     <div class="seg" id="seg-scale" role="group" aria-label="Price scale"></div>
+    <div class="seg" id="seg-cycles" role="group" aria-label="Cycles overlay" hidden></div>
+    <div class="seg" id="seg-counts" role="group" aria-label="Counts panel" hidden></div>
+  </div>
+  <div class="cycles-bar" id="cycles-bar" hidden>
+    <div class="seg" id="seg-cycle-levels" role="group" aria-label="Cycle levels"></div>
+    <div class="seg" id="seg-cycle-layers" role="group" aria-label="Cycle layers"></div>
+    <div class="cycles-info" id="cycles-info" aria-live="off"></div>
   </div>
 
   <div class="readout" id="readout" aria-live="off"></div>
 
-  <main class="chart-wrap">
+  <main class="chart-wrap" id="chart-wrap">
     <div id="chart"></div>
     <div class="chart-msg" id="chart-msg">Loading</div>
+    <aside class="counts-panel" id="counts-panel" aria-label="Wave counts" hidden></aside>
   </main>
 
   <footer class="chart-foot">
