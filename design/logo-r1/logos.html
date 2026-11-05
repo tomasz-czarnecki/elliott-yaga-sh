@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logo round 1 · elliott.yaga.sh</title>
+<link rel="icon" href="five-strokes/mark-16.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0C1526; --surface:#131E33; --ink:#F3F5F9; --body:#BFC9D9; --muted:#93A1B7; --line:#223049; --line-strong:#41516E; --accent:#E8B04A; --sans:'Geist',system-ui,sans-serif; --mono:'Geist Mono',ui-monospace,monospace; --gutter:24px; --max:1200px; --header-h:64px; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+main { max-width:1200px; margin:0 auto; padding:48px 24px 96px; }
+h1 { font-size:40px; font-weight:600; letter-spacing:-.02em; margin:0 0 12px; }
+.lead { color:var(--body); font-size:18px; line-height:1.5; max-width:70ch; margin:0 0 24px; }
+.strip { display:flex; gap:24px; padding:16px; border:1px solid var(--line); margin-bottom:48px; flex-wrap:wrap; }
+.strip img { display:block; }
+.concept { border-top:1px solid var(--line-strong); padding:32px 0 48px; }
+.concept h2 { font-size:24px; font-weight:600; letter-spacing:-.01em; margin:0 0 4px; }
+.rank { font-family:var(--mono); font-size:12px; font-weight:400; color:var(--bg); background:var(--accent); padding:2px 8px; margin-right:12px; vertical-align:3px; }
+.idea { color:var(--body); margin:0 0 20px; line-height:1.5; }
+.grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:24px; margin-top:20px; }
+.sizes { margin:0; display:flex; flex-wrap:wrap; align-items:center; gap:32px; padding:24px; background:var(--surface); border:1px solid var(--line); }
+.size { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.size img { display:block; }
+.big { margin-left:auto; }
+figcaption { font-family:var(--mono); font-size:12px; color:var(--muted); white-space:nowrap; }
+.side { display:flex; flex-direction:column; gap:12px; }
+.anatomy { display:block; width:100%; background:var(--bg); border:1px solid var(--line); }
+.lighttile { background:#fff; display:flex; align-items:center; gap:24px; padding:16px; }
+.lighttile .brand { color:#0C1526; }
+.lockup-light { display:block; }
+.tab { display:flex; align-items:center; gap:8px; height:32px; padding:0 12px; background:#223049; color:var(--ink); font-size:12px; }
+.tab.light { background:#E7EAF0; color:#0C1526; }
+.tab img { display:block; }
+/* Header: copied from site/styles.css */
+.site-header { background:var(--bg); border:1px solid var(--line); }
+.site-header-inner { height:var(--header-h); padding:0 var(--gutter); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brand { display:flex; align-items:center; gap:8px; min-height:44px; text-decoration:none; color:var(--ink); }
+.brand-mark { display:block; width:36px; height:36px; flex:none; }
+.brand-name { font-size:16px; font-weight:600; letter-spacing:-.01em; }
+.site-brand { display:flex; align-items:center; }
+.btn { display:inline-flex; align-items:center; justify-content:center; border:1px solid transparent; border-radius:0; font-weight:500; text-decoration:none; }
+.btn-dark { background:var(--ink); color:var(--bg); }
+.btn-sm { min-height:44px; padding:0 16px; font-size:14px; }
+#top3 { border-top:1px solid var(--line-strong); padding:32px 0 0; }
+#top3 h2 { font-size:24px; font-weight:600; margin:0 0 16px; }
+.stack { margin-bottom:16px; }
+/* Back-to-yaga bar: copied from site/styles.css */
+.yaga-bar { background:#161514; border:1px solid #2A2826; border-bottom:0; }
+.yaga-bar-inner { height:28px; padding:0 var(--gutter); display:flex; align-items:center; }
+.yaga-bar-link { display:inline-flex; align-items:center; gap:6px; color:#C4BFB7; text-decoration:none; font-family:var(--mono); font-size:11px; letter-spacing:.02em; }
+.yaga-bar-link strong { color:#F5F4F2; font-weight:500; }
+.yaga-bar-arrow { display:block; width:12px; height:12px; flex:none; }
+.yaga-bar-mark { display:block; width:16px; height:16px; flex:none; }
+@media (max-width:860px) { .grid { grid-template-columns:minmax(0,1fr); } .big { margin:0; } .big img { max-width:100%; height:auto; } h1 { font-size:32px; } .site-header-inner { padding:0 12px; } .btn-sm { padding:0 10px; font-size:12px; } .lighttile { flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<main id="top">
+<h1>Logo round 1</h1>
+<p class="lead">Eight concepts for elliott.yaga.sh, beside the mark it borrows today. The numbered tags are the ranking; the reasoning is in PROPOSAL.md. Bracket Impulse, One Line and Fib Lattice are drawn exactly on the NewWave rulebook's levels: W2 .618, W3 1.618, W4 .382, W5 2.236. Sizes render at 1x device pixels on a 1x screen.</p>
+<div class="strip"><a href="#five-strokes" title="Five Strokes"><img src="five-strokes/mark.svg" width="36" height="36" alt="Five Strokes"></a><a href="#bracket-impulse" title="Bracket Impulse"><img src="bracket-impulse/mark.svg" width="36" height="36" alt="Bracket Impulse"></a><a href="#one-line" title="One Line"><img src="one-line/mark.svg" width="36" height="36" alt="One Line"></a><a href="#broom-candle" title="Broom Candle"><img src="broom-candle/mark.svg" width="36" height="36" alt="Broom Candle"></a><a href="#fib-lattice" title="Fib Lattice"><img src="fib-lattice/mark.svg" width="36" height="36" alt="Fib Lattice"></a><a href="#side-eye" title="Side-Eye"><img src="side-eye/mark.svg" width="36" height="36" alt="Side-Eye"></a><a href="#broom-five" title="Broom Five"><img src="broom-five/mark.svg" width="36" height="36" alt="Broom Five"></a><a href="#loaded-die" title="Loaded Die"><img src="loaded-die/mark.svg" width="36" height="36" alt="Loaded Die"></a></div>
+<article class="concept" id="baseline">
+  <h2>Baseline: current yaga mark</h2>
+  <p class="idea">Borrowed from yaga.sh. A raster at 128 px, and nothing in it says Elliott or Bitcoin.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="baseline/yaga-mark-dark.webp" width="16" height="16" alt=""><figcaption>16 (scaled)</figcaption></div>
+      <div class="size"><img src="baseline/yaga-mark-dark.webp" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="baseline/yaga-mark-dark.webp" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="baseline/yaga-mark-dark.webp" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      
+      <div class="lighttile"><img src="baseline/yaga-mark.webp" width="64" height="64" alt=""><span class="brand light-brand"><img class="brand-mark" src="baseline/yaga-mark.webp" alt=""><span class="brand-name">elliott.yaga.sh</span></span></div>
+      <div class="tab"><img src="baseline/yaga-mark-dark.webp" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="baseline/yaga-mark.webp" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="five-strokes">
+  <h2><span class="rank">1</span>Five Strokes</h2>
+  <p class="idea">Count the strokes in &lt;/&gt;. There are five, and the middle one is the longest. The yaga tag was an impulse all along.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="five-strokes/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="five-strokes/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (master)</figcaption></div>
+      <div class="size"><img src="five-strokes/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="five-strokes/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="five-strokes/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="five-strokes/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="8.45" y="19" text-anchor="middle" fill="#F3F5F9">1</text><text x="8.45" y="47" text-anchor="middle" fill="#F3F5F9">2</text><text x="40" y="34" text-anchor="middle" fill="#F3F5F9">3</text><text x="55.55" y="19" text-anchor="middle" fill="#F3F5F9">4</text><text x="55.55" y="47" text-anchor="middle" fill="#F3F5F9">5</text><text x="32" y="68" text-anchor="middle" fill="#E8B04A">stroke 3 = 1.618 x stroke 1</text></g></svg>
+      <div class="lighttile"><img src="five-strokes/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="five-strokes/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="five-strokes/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="five-strokes/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="bracket-impulse">
+  <h2><span class="rank">7</span>Bracket Impulse</h2>
+  <p class="idea">The literal sibling: the yaga tag with the broom swapped for a rulebook impulse.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="bracket-impulse/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="bracket-impulse/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="bracket-impulse/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="bracket-impulse/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="bracket-impulse/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="bracket-impulse/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="21.6" y="62" text-anchor="middle" fill="#F3F5F9">0</text><text x="20.17" y="38.9" text-anchor="middle" fill="#F3F5F9">1</text><text x="30.93" y="50.7" text-anchor="middle" fill="#F3F5F9">2</text><text x="33.07" y="19.8" text-anchor="middle" fill="#F3F5F9">3</text><text x="43.83" y="31.61" text-anchor="middle" fill="#F3F5F9">4</text><text x="42.4" y="8" text-anchor="middle" fill="#F3F5F9">5</text></g></svg>
+      <div class="lighttile"><img src="bracket-impulse/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="bracket-impulse/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="bracket-impulse/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="bracket-impulse/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="one-line">
+  <h2><span class="rank">8</span>One Line</h2>
+  <p class="idea">The whole 5-3 cycle drawn in one stroke, in rulebook proportions, nothing else.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="one-line/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="one-line/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="one-line/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="one-line/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="one-line/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="one-line/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="3" y="58" text-anchor="middle" fill="#F3F5F9">0</text><text x="10.76" y="31.49" text-anchor="middle" fill="#F3F5F9">1</text><text x="15.56" y="52.46" text-anchor="middle" fill="#F3F5F9">2</text><text x="28.12" y="16.97" text-anchor="middle" fill="#F3F5F9">3</text><text x="32.92" y="37.94" text-anchor="middle" fill="#F3F5F9">4</text><text x="40.68" y="8" text-anchor="middle" fill="#F3F5F9">5</text><text x="48.44" y="34.51" text-anchor="middle" fill="#F3F5F9">A</text><text x="53.24" y="13.54" text-anchor="middle" fill="#F3F5F9">B</text><text x="61" y="40.06" text-anchor="middle" fill="#F3F5F9">C</text></g></svg>
+      <div class="lighttile"><img src="one-line/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="one-line/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="one-line/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="one-line/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="broom-candle">
+  <h2><span class="rank">2</span>Broom Candle</h2>
+  <p class="idea">A broom standing on its bristles has the shape of a candle: long upper wick, small body.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="broom-candle/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="broom-candle/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="broom-candle/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="broom-candle/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="broom-candle/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="broom-candle/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="53" y="12" text-anchor="start" fill="#F3F5F9">wick</text><text x="62" y="52" text-anchor="start" fill="#E8B04A">body</text><text x="18" y="66" text-anchor="middle" fill="#93A1B7">two ordinary candles</text></g></svg>
+      <div class="lighttile"><img src="broom-candle/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="broom-candle/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="broom-candle/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="broom-candle/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="fib-lattice">
+  <h2><span class="rank">5</span>Fib Lattice</h2>
+  <p class="idea">An architect's section: solid ground under the impulse, cut along its own Fibonacci levels in price and time.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="fib-lattice/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="fib-lattice/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="fib-lattice/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="fib-lattice/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="fib-lattice/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="fib-lattice/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="65" y="40.08" text-anchor="start" fill="#93A1B7">1</text><text x="65" y="54.25" text-anchor="start" fill="#93A1B7">0.382</text><text x="65" y="17.16" text-anchor="start" fill="#93A1B7">2</text><text x="65" y="31.33" text-anchor="start" fill="#93A1B7">1.382</text><text x="65" y="3" text-anchor="start" fill="#93A1B7">2.618</text><text x="14.36" y="66.5" text-anchor="middle" fill="#93A1B7">1</text><text x="22" y="70" text-anchor="middle" fill="#93A1B7">1.618</text><text x="42" y="66.5" text-anchor="middle" fill="#93A1B7">3.236</text><text x="49.64" y="70" text-anchor="middle" fill="#93A1B7">3.854</text><text x="62" y="66.5" text-anchor="middle" fill="#93A1B7">4.854</text></g></svg>
+      <div class="lighttile"><img src="fib-lattice/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="fib-lattice/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="fib-lattice/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="fib-lattice/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="side-eye">
+  <h2><span class="rank">4</span>Side-Eye</h2>
+  <p class="idea">Pani Yaga reads your count over her glasses. Her fringe is an impulse, her grey streak is wave 3.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="side-eye/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="side-eye/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="side-eye/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="side-eye/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="side-eye/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="side-eye/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="32" y="-1" text-anchor="middle" fill="#93A1B7">wave 3 = grey streak</text><text x="32" y="66" text-anchor="middle" fill="#E8B04A">both pupils right, lids flat</text></g></svg>
+      <div class="lighttile"><img src="side-eye/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="side-eye/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="side-eye/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="side-eye/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="broom-five">
+  <h2><span class="rank">6</span>Broom Five</h2>
+  <p class="idea">The witch is riding the wave: the first four legs are the flight path, wave 5 is the broom.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="broom-five/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="broom-five/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="broom-five/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="broom-five/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="broom-five/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="broom-five/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="13.86" y="33.5" text-anchor="middle" fill="#F3F5F9">1</text><text x="19.95" y="59.41" text-anchor="middle" fill="#F3F5F9">2</text><text x="35.91" y="11" text-anchor="middle" fill="#F3F5F9">3</text><text x="36" y="42" text-anchor="middle" fill="#0C1526">4</text><text x="56" y="8" text-anchor="end" fill="#F3F5F9">5</text></g></svg>
+      <div class="lighttile"><img src="broom-five/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="broom-five/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="broom-five/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="broom-five/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article><article class="concept" id="loaded-die">
+  <h2><span class="rank">3</span>Loaded Die</h2>
+  <p class="idea">Five amber pips, three coral, one empty cell. 5-3 against chance, and the empty cell is the other/unclear share.</p>
+  <header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="loaded-die/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header>
+  <div class="grid">
+    <figure class="sizes">
+      <div class="size"><img src="loaded-die/mark-16.svg" width="16" height="16" alt=""><figcaption>16 (optical cut)</figcaption></div>
+      <div class="size"><img src="loaded-die/mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></div>
+      <div class="size"><img src="loaded-die/mark.svg" width="36" height="36" alt=""><figcaption>36 header</figcaption></div>
+      <div class="size big"><img src="loaded-die/mark.svg" width="256" height="256" alt=""><figcaption>256</figcaption></div>
+    </figure>
+    <div class="side">
+      <svg class="anatomy" viewBox="-8 -6 92 78" aria-hidden="true"><image href="loaded-die/mark.svg" width="64" height="64"/><g font-family="Geist Mono, monospace" font-size="2.8"><text x="32" y="68" text-anchor="middle" fill="#E8B04A">5 impulse, 3 correction, 1 other/unclear</text></g></svg>
+      <div class="lighttile"><img src="loaded-die/mark-light.svg" width="64" height="64" alt=""><img class="lockup-light" src="loaded-die/lockup-light.svg" height="36" alt=""></div>
+      <div class="tab"><img src="loaded-die/mark-16.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div><div class="tab light"><img src="loaded-die/mark-16-light.svg" width="16" height="16" alt=""><span>Elliott waves on Bitcoin</span></div>
+    </div>
+  </div>
+</article>
+<section id="top3"><h2>Baseline and top three in the real header, with the back-to-yaga bar</h2><div class="stack"><div class="yaga-bar"><div class="yaga-bar-inner"><a class="yaga-bar-link" href="#top">
+      <svg class="yaga-bar-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg>
+      <img class="yaga-bar-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span>Back to <strong>yaga.sh</strong></span></a></div></div><header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header></div><div class="stack"><div class="yaga-bar"><div class="yaga-bar-inner"><a class="yaga-bar-link" href="#top">
+      <svg class="yaga-bar-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg>
+      <img class="yaga-bar-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span>Back to <strong>yaga.sh</strong></span></a></div></div><header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="five-strokes/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header></div><div class="stack"><div class="yaga-bar"><div class="yaga-bar-inner"><a class="yaga-bar-link" href="#top">
+      <svg class="yaga-bar-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg>
+      <img class="yaga-bar-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span>Back to <strong>yaga.sh</strong></span></a></div></div><header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="broom-candle/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header></div><div class="stack"><div class="yaga-bar"><div class="yaga-bar-inner"><a class="yaga-bar-link" href="#top">
+      <svg class="yaga-bar-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg>
+      <img class="yaga-bar-mark" src="baseline/yaga-mark-dark.webp" width="128" height="128" alt=""><span>Back to <strong>yaga.sh</strong></span></a></div></div><header class="site-header"><div class="site-header-inner">
+      <div class="site-brand"><a href="#top" class="brand"><img class="brand-mark" src="loaded-die/mark.svg" width="128" height="128" alt=""><span class="brand-name">elliott.yaga.sh</span></a></div>
+      <a href="#top" class="btn btn-dark btn-sm">Open the chart</a>
+    </div></header></div></section>
+</main>
+</body>
+</html>
