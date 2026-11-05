@@ -440,7 +440,7 @@ class TestDeterminism:
     def test_version_in_output_and_private_path(self):
         obj = payload(random_frames(seed=3, days=60), CFG, 1)
         assert obj["rules_version"] == CFG.version and obj["rules_digest"] == CFG.digest
-        assert obj["format"] == "ewave-counts-4"
+        assert obj["format"] == "ewave-counts-6"
         parts = default_path().parts
         assert parts[-3:] == ("data", "local", "counts.json")
         assert "win chance" in obj["note"]

@@ -67,6 +67,14 @@ class Config:
     def fit(self) -> dict:
         return self.raw["fit"]
 
+    @property
+    def clarity(self) -> dict:
+        return self.raw["clarity"]
+
+    @property
+    def projection(self) -> dict:
+        return self.raw["projection"]
+
     def replaced(self, **sections) -> "Config":
         """A copy with whole top-level sections merged over; for tests."""
         raw = {**self.raw}

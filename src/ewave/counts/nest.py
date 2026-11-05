@@ -12,10 +12,12 @@ from dataclasses import dataclass, field
 from .config import Config
 from .enumerate import Scan, flat_anchors, unbroken_anchors
 from .frames import Frames, TF_MS
+from .clarity import Clarities, WaveClarity
 from .inside import FAIL, Cache, Inner, Insides, Verdict
 from .odds import Odds, rows_for
 from .pivots import Pivot, ladder_scans, locate, zigzag
 from .premise import BROKEN, DEAD, Given, Premise, applies, given_on, status
+from .project import Projection, project_tree
 from .rules import COMBO, CORRECTIVE, ED, FAMILY, FLAT, IMPULSE, LD, TRIANGLE, TRIPLE, WAVES, ZIGZAG, Checker
 from .score import Fit, Judge, Subwaves, anchor_major, partner_filter, shares, tf_move
 from .state import AFTER, Count, Kill, Level, State, advance, alive, describe
@@ -41,6 +43,10 @@ class Node:
     inside: list[Inner] = field(default_factory=list)  # what its finished waves look like inside
     alike: list = field(default_factory=list)          # the root's other labels for the same move, best first
     checks: list[Verdict] = field(default_factory=list)  # each wave against what it must hold inside
+    clarity: list[WaveClarity] = field(default_factory=list)  # how clearly it holds it
+    running_count: Count | None = None  # the count whose running wave `state` describes: on a finished child, the parent's
+    proj: Projection | None = None      # where it says price goes from here
+    sigma: float = 0.0                  # realised volatility per bar on its frame
 
 
 @dataclass
@@ -73,6 +79,7 @@ class Builder:
         self.anchor_from: dict[str, int] = {}
         self.unpaired = 0         # labellings dropped by FIB-T8: another pairing of the same legs won on time and price
         self.insides = Insides(frames, cfg, self.judge, cache)
+        self.clarities = Clarities(self.insides, cfg)
         self.inside_rule: dict[str, dict] = {}  # per frame: readings read, killed by the inside rule, and why
         self.inside_known: dict[str, dict[tuple, bool]] = {}
         self.premise: Premise | None = None
@@ -141,6 +148,10 @@ class Builder:
                 if got:
                     judged.append(got)
                 judged += self.insides.judge_legs(c, st)
+                if n < cfg.clarity["rank_shortlist"]:
+                    got = self.clarities.judge(c)
+                    if got:
+                        judged.append(got)
                 fit = self.judge.finish(judged)
             final.append((c, st, fit))
         return sorted(final, key=_order)
@@ -208,6 +219,7 @@ class Builder:
         f = self.frames[tf]
         cfg = self.cfg
         running = st
+        running_count = c
         closes = False
         if st.wave == AFTER and parent is not None:
             checker = Checker(cfg.rules)
@@ -218,6 +230,7 @@ class Builder:
                 if alive(up, next_state, f):
                     return None
                 running = next_state
+                running_count = up
                 closes = True
         fw = cfg.frames[tf]
         sigma = f.volatility(fw["vol_bars"])
@@ -232,7 +245,7 @@ class Builder:
         path = fit.score if parent is None else (parent.path_fit ** depth * fit.score) ** (1 / (depth + 1))
         hi, hi_t, lo, lo_t = f.since_ts(f.bar_at(running.start.ts))
         extreme_ts = hi_t if running.d > 0 else lo_t
-        return Node(nid, tf, depth, c, running, st, fit, share, odds, closes, path, parent, extreme_ts=extreme_ts, checks=self.insides.checks(c, st))
+        return Node(nid, tf, depth, c, running, st, fit, share, odds, closes, path, parent, extreme_ts=extreme_ts, checks=self.insides.checks(c, st), running_count=running_count, sigma=sigma)
 
     def _diverse(self, ranked, limit: int, needs_child, both_ways: bool = False) -> tuple[list, list]:
         """Best first, but one reading per idea before any second helping: three shades of one idea are not three counts. An
@@ -330,6 +343,8 @@ class Builder:
         for lv in levels:
             for node in lv.nodes:
                 node.inside = self.insides.tree(node.count)
+                node.clarity = self.clarities.count(node.count)
+        project_tree(_Levels(levels), self.frames, cfg, lambda n: self.clarities.widen(n.clarity))
         return Tree(root_tf, self.frames.as_of_ms, self.price, levels, self.stats, self.premise_status)
 
     def _with_confluence(self, c: Count, st: State, fit: Fit, parent: Node) -> Fit:
@@ -406,6 +421,11 @@ class Builder:
         legal_up = sum(1 for i in legal if _next_move(i[1], price)[0] > 0)
         return {"tf": tf, "shared": shared, "split": split, "ys": _ys(nodes, price), "legal": len(legal), "legal_up": legal_up,
                 "legal_down": len(legal) - legal_up, "other_share": other}
+
+
+@dataclass
+class _Levels:
+    levels: list[Level_]
 
 
 def _order(item) -> tuple:

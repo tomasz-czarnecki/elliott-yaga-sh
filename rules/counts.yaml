@@ -1,8 +1,8 @@
 # Top-down count board. Every threshold, ladder, weight and limit lives here; the version is stored with every output.
 # "sec N" points to a section of the NewWave compact rulebook (commercial, kept out of this repo: numbers and section
 # ids only; IMP-T, FIB-T and the like are ids of the complete reference). Anything marked "ours" is a decision of this
-# project; research/counts-r1.md to counts-r4.md explain each one.
-version: counts-r4.0
+# project; research/counts-r1.md to counts-r6.md explain each one.
+version: counts-r6.0
 venue: bybit_btcusdt_perp      # his chart: BYBIT:BTCUSDT.P
 
 tree:
@@ -70,6 +70,16 @@ inside:
   depth: 2                     # sec 0: the inside 5's largest wave must itself hold a 5, or be unreadable (FND-8)
   clear_margin: 0.02           # sec 0 "3-or-5 unreadable, hold both"; the r3 leg_form margin, fit points between the best 5 and the best 3
   minute_warmup_days: 1        # ours: days before a wave's first day that warm up ATR(14) on 1m
+
+# Round 6: how clearly a finished wave holds its form, on the same ladder as `inside` above (src/ewave/counts/clarity.py,
+# research/counts-r6.md). All numbers ours. It never kills (sec 0, FND-4): it ranks and widens the boxes.
+clarity:
+  fade: 0.1                    # the other form this much better in fit halves the grade; a tie costs nothing (sec 0: hold both)
+  words: {clear: 0.6, fair: 0.3, weak: 0.15}
+  ok: 0.3                      # at or above this a wave costs no rank and no box width
+  widen: 1.0                   # a count with no clarity at all draws its boxes 1 + this wide
+  finest_share: 0.25           # "only at the finest swing sizes": this share of the rungs or fewer, all at the fine end
+  rank_shortlist: 12           # the costly walk, for this many candidates per window
 
 # What may fill each wave of each pattern (sec 1, 2, 3). A single leg passes the enumerator, since its inside is not visible
 # at that threshold; the inside rule above then reads it. Corrective waves of a flat or combination stay corrective; only a
@@ -186,6 +196,78 @@ time:
   hit_tol: 0.06                          # ours: the running extreme sits on a crosshair when within this share on both axes (same as near_tol)
   partner_margin: 0.1                    # ours: FIB-T8 "better in both wins": a pairing is dropped only when another beats it by this much on both time and price
 
+# Round 6: projected paths (src/ewave/counts/project.py). The levels are `levels` and `time.windows` above; this says which one
+# is the most likely point of each box and how a running wave's inside is split. IDs are sections of the NewWave complete
+# reference; EMP is research/model-options/02-empirical.md. None of these points is evidence: the book's levels and windows are
+# hit at random-path rates (EMP B2, B3). Where the book names one number it is that; where it names a range, see each `src`.
+projection:
+  likely:
+    w2_ret: {k: 0.618, src: "IMP-F1; legal BTC W2s run deep (EMP B2)"}
+    w3_ext: {k: 1.618, src: "IMP-F4"}
+    w4_ret: {k: 0.382, src: "IMP-F2"}
+    w5: {k: 1.0, src: "IMP-F6, IMP-T5"}
+    zz_b_ret: {k: 0.618, src: "ZZ-G3"}
+    c_ext_zigzag: {k: 1.0, src: "ZZ-G1, ZZ-G2"}
+    flat_b_ret: {k: 0.786, src: "FLAT-G1, FLAT-G5"}
+    c_ext_flat: {k: 1.0, src: "FLAT-G1, FLAT-G3"}
+    x_ret: {k: 0.618, src: "CPX-G5"}
+    y_ext: {k: 1.0, src: "CPX-G1, CPX-G3"}
+    z_ext: {k: 1.236, src: "CPX-G4"}
+    tri_ret: {k: 0.786, src: "TRI-G2"}
+    tri_e_ext: {k: 0.618, src: "TRI-G2, TRI-R10"}
+    diag_w4_ret: {k: 0.618, src: "sec 2; ours: the book gives no W4 pull for a diagonal"}
+    diag_w5_ext: {k: 1.0, src: "sec 2 G"}
+    next_degree_ret: {k: 0.5, src: "IMP-F3; the conservative one first (sec 4)"}
+    after_correction_ret: {k: 0.618, src: "ours: the book has no pull for the leg after a finished correction"}
+    thrust: {k: 1.0, src: "sec 3: height of the triangle from its E"}
+  likely_time:
+    w2: {k: 0.618, src: "IMP-T3, FIB-T3"}
+    w3: {k: 1.618, src: "IMP-T1"}
+    w4: {k: 0.33, src: "IMP-T4, FIB-T4; BTC W4s run short (EMP B3)"}
+    w5: {k: 1.0, src: "IMP-T2, IMP-T5"}
+    b: {k: 1.0, src: "FIB-T5"}
+    x: {k: 1.0, src: "CPX-G6, FIB-T5"}
+    c: {k: 1.0, src: "COR-4"}
+    y: {k: 1.0, src: "CPX-G3"}
+    diag_w4: {k: 0.618, src: "DIAG-G3"}
+    after: {k: 0.618, src: "ours: same scale as a W2 against the whole"}
+  # The inside of a running wave: each leg's size against the first leg (minus: against the wave) and its time against the first.
+  inner:
+    zigzag: {legs: ["A", "B", "C"], price: [1.0, -0.618, 1.0], time: [1.0, 1.0, 1.0], src: "ZZ-G1, ZZ-G3, COR-4, FIB-T5"}
+    flat: {legs: ["A", "B", "C"], price: [1.0, -0.618, 1.0], time: [1.0, 1.0, 1.0], src: "FLAT-G1, FLAT-G5 (shallow flat Bs on BTC), COR-4, FIB-T5"}
+    combination: {legs: ["W", "X", "Y"], price: [1.0, -0.618, 1.0], time: [1.0, 1.0, 1.0], src: "CPX-G1, CPX-G3, CPX-G5, CPX-G6"}
+    triangle: {legs: ["A", "B", "C", "D", "E"], price: [1.0, -0.786, 0.618, -0.486, 0.3], time: [1.0, 1.0, 1.0, 1.0, 1.0], src: "TRI-G2; legs alike in time is ours"}
+    impulse: {legs: ["1", "2", "3", "4", "5"], price: [1.0, -0.618, 1.618, -0.618, 1.0], time: [1.0, 0.618, 1.618, 0.53, 1.0], src: "IMP-F1, F2, F4, F6, IMP-T1, T3, T4, T5"}
+    leading_diagonal: {legs: ["1", "2", "3", "4", "5"], price: [1.0, -0.786, 0.786, -0.618, 0.618], time: [1.0, 0.618, 1.0, 0.5, 1.0], src: "sec 2 G K, DIAG-G3; the split is ours"}
+    ending_diagonal: {legs: ["1", "2", "3", "4", "5"], price: [1.0, -0.786, 0.786, -0.618, 0.618], time: [1.0, 0.618, 1.0, 0.5, 1.0], src: "sec 2 G K, DIAG-G3; the split is ours"}
+  prefer: {"4": flat}          # sec 1 G: W4 usually a flat or a triangle
+  prefer_src: "sec 1 G: W4 usually a flat"
+  inner_min_sigmas: 3          # ours: a running wave closer than this many sigmas over inner_min_bars gets no inner legs
+  inner_min_bars: 8            # ours: nor one due sooner than this
+  fallback_bars: 8             # ours: where the book gives no time, how far ahead a leg is drawn
+  box_min_atr: 0.25            # ours: half a box is at least this share of the frame's ATR, so that it can be seen
+  nest_floor: 0.25             # ours: a child's level far outside the parent's box keeps this much of its weight
+  nest_slope: 1.0              # ours: it falls to that floor as it goes this many parent-waves past the box
+
+# Round 6: magnets (src/ewave/counts/confluence.py). All ours.
+clusters:
+  tol_atr: 0.25                # levels within 2 x this x 1D ATR(14) of log price make one cluster
+  after_weight: 0.5            # a level of the move after a structure weighs half
+  top: 6                       # shown in the panel
+
+# Round 6: what each export compares with the one before (src/ewave/counts/events.py). All ours; research/counts-r6.md has the
+# measured flip rates behind `confirm`.
+events:
+  roots: ["1d"]                # the 12H root is the same picture; one root keeps the messages few
+  confirm: {"1d": 8, "12h": 8, "4h": 8, "1h": 4, "15m": 4}  # consecutive new-bar exports a new top count must lead before it counts as changed
+  cluster_top: 3               # price entering one of the top clusters is an event
+
+# Round 6: the forward log and its scoring (src/ewave/counts/forward.py). The prior is ours.
+forward:
+  roots: ["1d"]
+  shift_prior: 20              # walk-forward shift of the null's log odds: pseudo-count, in units of p(1-p)
+  bootstrap: 2000              # date blocks resampled for an interval
+
 # Rulebook fit, round 2. Three axes, each judged on its own, and a count needs all three. Each item is judged 0 to 1 only
 # where it can be judged.
 #   axis = (sum of w x f + evidence x prior) / (sum of w + evidence)
@@ -270,6 +352,7 @@ fit:
     diag_frame: {axis: structure, w: 0.7, sec: "2 B: far more common at 15m and under"}
     subwaves: {axis: structure, w: 1.5, sec: "0, 6"}
     leg_form: {axis: structure, w: 1.5, sec: "0 R1 R2, 3: only impulse W1 and zigzag A start with a 5; 3-or-5 unreadable holds both"}
+    clarity: {axis: structure, w: 1.5, sec: "0, FND-8, FND-9: how clearly a finished wave holds its form. Weight ours", credit: penalty}
     inside_structure: {axis: structure, w: 2.0, sec: "0, 6: a labelled 5 inside a wave. Two items, ours: it was judged on about ten"}
     triple_rare: {axis: structure, w: 2.0, sec: "3, conflict 9: a triple three is rare, simple first. The weight is ours: it must beat the double three when both read the same move"}
     anchor_major: {axis: structure, w: 1.0, sec: "6: ours, the root starts at a clear higher-degree extreme"}

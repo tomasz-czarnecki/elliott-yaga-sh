@@ -9,15 +9,19 @@ from pathlib import Path
 
 from ..ingest.config import project_root
 from ..ingest.store import atomic_write
+from . import clock as clock_mod
+from .clarity import Grade, Reading, WaveClarity
 from .config import Config
+from .confluence import cluster_of, clusters_payload
 from .frames import Frames, stamp
 from .inside import FAIL, HOLD, PASS, RUNNING, Cache, Inner, Verdict
 from .nest import Builder, Node, Tree, _next_move
+from .project import Leg, Projection
 from .premise import DEAD, BROKEN, Premise, applies, given_on, ratios_text, rule_notes, status, time_notes
 from .rules import ED, FLAT, IMPULSE, LD, TRIPLE, flat_kind
 from .state import AFTER, _ret, crosshairs, sits_on_crosshair
 
-FORMAT = "ewave-counts-4"
+FORMAT = "ewave-counts-6"
 NOTE = ("Ranking is rulebook fit, not a win chance: no probability that a count is true can be measured. The only "
         "probability shown is how often a random walk at today's volatility reaches the target before the invalidation. "
         "Fib time here is the rulebook's plausibility filter, not a proven edge: its templates hit at random-path rates.")
@@ -188,12 +192,62 @@ def verdict_row(v: Verdict) -> dict:
     return {"wave": v.wave, "required": v.required, "found": v.found, "state": v.state, "tf": v.tf, "k": v.k, "pattern": v.pattern, "note": v.note, "text": verdict_word(v)}
 
 
-def _node(node: Node, price: float, now_ms: int, cfg: Config) -> dict:
+def _grade(g: Grade) -> dict:
+    return {"required": g.required, "rungs": g.rungs, "found": g.found, "opposite": g.opposite, "share": round(g.share, 3), "margin": round(g.margin, 3),
+            "gap": None if g.gap is None else round(g.gap, 3), "value": round(g.value, 3), "word": g.word, "first": g.first, "where": g.where}
+
+
+def _reading(r: Reading | None) -> dict | None:
+    if r is None:
+        return None
+    c = r.count
+    name = NAMES[c.pattern]
+    if c.pattern == FLAT:
+        name = f"Flat ({flat_kind(c.s, {lab: pt.price for lab, pt in zip(c.labs, c.pts)})})"
+    return {"pattern": c.pattern, "name": name, "tf": c.tf, "k": c.k, "value": round(r.value, 3),
+            "labels": [{"l": lab, "t": _s(pt.ts), "at": _s(pt.t), "p": pt.price, "kind": pt.kind} for lab, pt in zip(c.labs, c.pts)],
+            "subs": [{"wave": s.wave, **_grade(s.grade)} for s in r.subs]}
+
+
+def clarity_row(w: WaveClarity) -> dict:
+    return {"wave": w.wave, "label": w.label, "value": round(w.value, 3), "word": w.word, "text": w.text, "own": _grade(w.own), "shown": _reading(w.shown), "best": _reading(w.best)}
+
+
+def _leg(leg: Leg) -> dict:
+    return {"wave": leg.wave, "name": "after" if leg.wave == "after" else _wave_name(leg.wave), "role": leg.role, "dir": _dir(leg.d), "p0": round(leg.p0, 2), "t0": _s(leg.t0), "p": round(leg.p, 2), "t": _s(leg.t),
+            "p_lo": None if leg.p_lo is None else round(leg.p_lo, 2), "p_hi": None if leg.p_hi is None else round(leg.p_hi, 2), "t_lo": _s(leg.t_lo), "t_hi": _s(leg.t_hi),
+            "t_str": stamp(leg.t)[:10], "targets": [{"k": t.k, "p": round(t.price, 2), "pull": t.pull, "reached": t.reached, "status": t.status, "nest_f": round(t.nest_f, 3)} for t in leg.targets],
+            "src": leg.src, "t_src": leg.t_src, "tool": leg.tool, "open_end": leg.open_end, "reached": leg.reached, "late": leg.late, "status": leg.status, "nest_f": round(leg.nest_f, 3)}
+
+
+def _projection(p: Projection, node: Node) -> dict:
+    return {"legs": [_leg(x) for x in p.legs], "inner": [_leg(x) for x in p.inner], "inner_pattern": p.inner_pattern, "inner_why": p.inner_why, "widen": round(p.widen, 3), "status": p.status, "nest_f": round(p.nest_f, 3)}
+
+
+def path_text(n: dict) -> str:
+    """The projection in one line: "Y down to 41,484 (34,796 to 55,141) by 2027-01-22, then after up to 82,486"."""
+    parts = []
+    for leg in n["projection"]["legs"]:
+        name = f"after {n['projection']['legs'][-2]['name']}" if leg["role"] == "after" and len(n["projection"]["legs"]) > 1 else leg["name"]
+        word = f"{name} {leg['dir']} to {_price(leg['p'])}"
+        if leg["open_end"]:
+            word = f"{name} {leg['dir']}: no pull until it ends, so far {_price(leg['p'])}"
+        elif leg["reached"]:
+            word = f"{name} {leg['dir']}: past every level, so far {_price(leg['p'])}"
+        elif leg["p_lo"] is not None and leg["role"] != "after":
+            word += f" ({_price(leg['p_lo'])} to {_price(leg['p_hi'])})"
+        if not leg["open_end"] and not leg["reached"] and leg["role"] != "after":
+            word += f" by {leg['t_str']}"
+        parts.append(word)
+    return ", then ".join(parts)
+
+
+def _node(node: Node, price: float, now_ms: int, cfg: Config, windows: list[dict] | None = None) -> dict:
     c, st = node.count, node.state
     move_d, move_level = _next_move(st, price)
     win = _window(node, now_ms)
     hit = sits_on_crosshair(st, node.extreme_ts, cfg.time["hit_tol"])
-    return {
+    out = {
         "id": node.id,
         "parent": node.parent.id if node.parent else None,
         "tf": node.tf,
@@ -230,7 +284,15 @@ def _node(node: Node, price: float, now_ms: int, cfg: Config) -> dict:
                    "labels": [{"l": lab, "p": pt.price} for lab, pt in zip(c2.labs, c2.pts)]} for c2, st2, f2 in node.alike],
         "children": [n.id for n in node.children],
         "no_child": node.no_child,
+        "sigma": node.sigma,
+        "clarity": [clarity_row(w) for w in node.clarity],
+        "clarity_min": None if not node.clarity else round(min(w.value for w in node.clarity), 3),
+        "projection": _projection(node.proj, node),
+        "clock": clock_mod.tag(win, _dir(st.d), windows),
+        "next_leg": None,
     }
+    out["path_text"] = path_text(out)
+    return out
 
 
 def _crossroads(cr: dict) -> dict:
@@ -276,12 +338,25 @@ def premise_payload(premise: Premise | None, frames: Frames, cfg: Config) -> dic
     }
 
 
-def tree_payload(tree: Tree, cfg: Config) -> dict:
-    return {
-        "root": tree.root_tf,
-        "levels": [{"tf": lv.tf, "crossroads": _crossroads(lv.crossroads), "stats": tree.stats.get(lv.tf),
-                    "nodes": [_node(n, tree.price, tree.as_of_ms, cfg) for n in lv.nodes]} for lv in tree.levels],
-    }
+def _next_leg(n: dict, rows: list[dict], tol: float) -> dict | None:
+    """The nearest thing to trade: the running wave's next level with its invalidation, window, R:R, odds and magnet."""
+    o = next((x for x in n["odds"] if x["name"] in ("leg", "parent")), None) or (n["odds"][0] if n["odds"] else None)
+    if o is None:
+        return None
+    c = cluster_of(o["target"], rows, tol)
+    return {"dir": o["dir"], "kind": o["name"], "target": o["target"], "pull": o["pull"], "stop": o["stop"], "rr": o["rr"], "p": o["p"], "p_nolimit": o["p_nolimit"], "h_bars": o["h_bars"], "h_src": o["h_src"],
+            "window": None if not n["window"] else {"lo": n["window"]["lo_str"], "hi": n["window"]["hi_str"], "status": n["window"]["status"]},
+            "cluster": None if c is None else {"id": c["id"], "p": c["p"], "readings": c["readings"], "frames": c["frames"]}}
+
+
+def tree_payload(tree: Tree, cfg: Config, atr_1d: float, windows: list[dict] | None = None) -> dict:
+    levels = [{"tf": lv.tf, "crossroads": _crossroads(lv.crossroads), "stats": tree.stats.get(lv.tf),
+               "nodes": [_node(n, tree.price, tree.as_of_ms, cfg, windows) for n in lv.nodes]} for lv in tree.levels]
+    nodes = [n for lv in levels for n in lv["nodes"]]
+    clusters = clusters_payload(nodes, tree.price, atr_1d, cfg.raw["clusters"])
+    for n in nodes:
+        n["next_leg"] = _next_leg(n, clusters["rows"], clusters["tol"])
+    return {"root": tree.root_tf, "levels": levels, "clusters": clusters}
 
 
 def recent_bars(frames: Frames, tail_days: int) -> dict:
@@ -296,11 +371,12 @@ def recent_bars(frames: Frames, tail_days: int) -> dict:
     return out
 
 
-def payload(frames: Frames, cfg: Config, now_ms: int, premise: Premise | None = None, cache: Cache | None = None) -> dict:
+def payload(frames: Frames, cfg: Config, now_ms: int, premise: Premise | None = None, cache: Cache | None = None, windows: list[dict] | None = None) -> dict:
     trees = {}
     cache = cache or Cache()  # the roots share one set of verdicts
+    atr = frames["1d"].atr[-1] if frames["1d"].atr else 0.0
     for root in cfg.tree["roots"]:
-        trees[root] = tree_payload(Builder(frames, cfg, premise, cache).build(root), cfg)
+        trees[root] = tree_payload(Builder(frames, cfg, premise, cache).build(root), cfg, atr, windows)
     return {
         "format": FORMAT,
         "rules_version": cfg.version,
@@ -309,6 +385,7 @@ def payload(frames: Frames, cfg: Config, now_ms: int, premise: Premise | None = 
         "generated_at_ms": now_ms,
         "as_of": _s(frames.as_of_ms),
         "as_of_str": stamp(frames.as_of_ms),
+        "cycles": windows,
         "price": frames.price,
         "note": NOTE,
         "premise": premise_payload(premise, frames, cfg),

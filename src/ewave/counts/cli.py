@@ -1,11 +1,15 @@
-"""`ewave-counts report | rank | export | replay | gold`. Reads the bars; never writes anything the collector owns."""
+"""`ewave-counts report | rank | export | replay | gold | events | score | backtest`. Reads the bars; never writes anything the collector owns."""
 from __future__ import annotations
 
 import argparse
 import sys
 import time
 
+from . import backtest as backtest_mod
+from . import clock as clock_mod
+from . import events as events_mod
 from . import export as export_mod
+from . import forward as forward_mod
 from . import gold as gold_mod
 from . import replay as replay_mod
 from .config import load_config
@@ -44,11 +48,41 @@ def cmd_export(args) -> int:
     cfg = load_config(args.rules)
     frames = _frames(args, cfg)
     cache = open_cache(cfg)
+    live = not args.as_of and not args.no_log  # a run on cut data is not a moment that happened: it logs nothing
+    windows = clock_mod.load_windows() if not args.as_of else None  # the cycles file is today's: it says nothing about a past date
     try:
-        path, size = export_mod.write(export_mod.payload(frames, cfg, int(time.time() * 1000), _premise(args), cache), args.out)
-        print(f"{path}: {size / 1000:.0f} KB, as of {stamp(frames.as_of_ms)} UTC; inside verdicts: {cache.hits} from the cache, {cache.misses} read")
+        obj = export_mod.payload(frames, cfg, int(time.time() * 1000), _premise(args), cache, windows)
+        path, size = export_mod.write(obj, args.out)
+        tail = ""
+        if live:
+            new = forward_mod.append_log(forward_mod.rows_of(obj, cfg.raw["forward"]))
+            got = events_mod.run(obj, cfg.raw["events"])
+            tail = f"; forward log +{new}, events +{len(got)}"
+        print(f"{path}: {size / 1000:.0f} KB, as of {stamp(frames.as_of_ms)} UTC; inside verdicts: {cache.hits} from the cache, {cache.misses} read{tail}")
     finally:
         cache.close()
+    return 0
+
+
+def cmd_events(args) -> int:
+    """Short one-line messages. --new: the unseen ones, and marks them seen."""
+    rows = events_mod.read_new() if args.new else events_mod.read_all()[-args.last :]
+    for e in rows:
+        print(f"{stamp(e['as_of'] * 1000)} {e['msg']}")
+    return 0
+
+
+def cmd_score(args) -> int:
+    cfg = load_config(args.rules)
+    frames = _frames(args, cfg)
+    print(forward_mod.render(forward_mod.read_log(args.log), frames["15m"], cfg.raw["forward"]))
+    return 0
+
+
+def cmd_backtest(args) -> int:
+    cfg = load_config(args.rules)
+    full = _frames(args, cfg)
+    print(backtest_mod.run(full, cfg, _premise(args), args))
     return 0
 
 
@@ -115,7 +149,21 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("export", help="write site/data/local/counts.json for the chart panel")
     p.add_argument("--out")
     p.add_argument("--as-of")
+    p.add_argument("--no-log", action="store_true", help="write the file only: no forward log, no events")
     p.set_defaults(func=cmd_export)
+    p = sub.add_parser("events", help="what changed between exports, as short lines")
+    p.add_argument("--new", action="store_true", help="only unseen events, and mark them seen")
+    p.add_argument("--last", type=int, default=20, help="without --new: how many to print")
+    p.set_defaults(func=cmd_events)
+    p = sub.add_parser("score", help="the forward log against what happened and against the volatility null")
+    p.add_argument("--log", help="log file (default: data/counts/forward.jsonl)")
+    p.set_defaults(func=cmd_score)
+    p = sub.add_parser("backtest", help="project at past dates on cut data, score against what came next, the null and random paths")
+    p.add_argument("--paths", type=int, default=0, help="sign-flipped random paths to run as the control")
+    p.add_argument("--workers", type=int, default=2, help="processes, for the control (4 cores, other jobs)")
+    p.add_argument("--no-minutes", action="store_true", help="no 1m bars on BTC, as on the control paths")
+    p.add_argument("--out", help="folder for the rows and the summary (default: .cache/counts/backtest)")
+    p.set_defaults(func=cmd_backtest)
     p = sub.add_parser("replay", help="the root counts at past dates, on cut data, against what came next")
     p.add_argument("--dates", required=True, help="comma separated, e.g. 2024-08-06,2025-04-08")
     p.add_argument("--root", default="1d", choices=["1d", "12h"])

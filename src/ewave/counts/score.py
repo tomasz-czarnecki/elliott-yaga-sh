@@ -742,7 +742,7 @@ def tf_move(tf: str, st: State, price: float, cfg: Config) -> tuple[str, float, 
     if not table:
         return None
     # a finished structure's running wave is what follows it now: its zone, not the wave after that
-    levels, d = (st.targets, st.next_d) if st.next_first and st.wave != AFTER else (st.zone, st.d)
+    levels, d = (st.targets, st.next_d) if st.targets and (not st.motive_running or st.zone_reached) and st.wave != AFTER else (st.zone, st.d)
     ahead = [lv.price for lv in levels if d and d * (lv.price - price) > 0]
     if not ahead:
         return None

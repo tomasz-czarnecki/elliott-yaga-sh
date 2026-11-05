@@ -83,7 +83,8 @@ def rows_for(st: State, price: float, sigma: float, h_bars: int, fallback: Level
              now_ms: int | None = None, tf_ms: int = 1, min_window_bars: int = 0) -> list[Odds]:
     """Two plans. "leg": the running wave to its zone, against what would end it. "next": the wave after it to its first
     target, against the running wave's limit (a running motive wave has none on that side: a new extreme says it is not
-    over). The one State.next_first names goes first. `fallback`: a parent's level, for a first wave with no pull yet.
+    over). Round 6: the leg goes first while it has a level ahead. A correction used to lead with what follows it, so a count
+    falling into its zone showed the move after it as its main plan. `fallback`: a parent's level, for a first wave with no pull yet.
     A level within min_sigmas bars of volatility of price is skipped: it is already there."""
     leg_row = next_row = None
     leg_h, leg_src, next_h, next_src = horizons(st, h_bars, now_ms, tf_ms, min_window_bars)
@@ -101,7 +102,7 @@ def rows_for(st: State, price: float, sigma: float, h_bars: int, fallback: Level
             stop = Kill(st.extreme, st.d, "new_extreme", "a new extreme: the running wave is not over")
         if nxt:
             next_row = odds_row("next", nxt, stop, price, st.next_d, sigma, next_h, next_src)
-    rows = [r for r in ((next_row, leg_row) if st.next_first else (leg_row, next_row)) if r]
+    rows = [r for r in (leg_row, next_row) if r]
     if not rows and fallback is not None and leg_stop and st.d * (fallback.price - furthest) > 0:
         row = odds_row("parent", fallback, leg_stop, price, st.d, sigma, leg_h, leg_src)
         if row:

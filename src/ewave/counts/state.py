@@ -122,11 +122,6 @@ class State:
         edge = min((lv.price for lv in self.zone), key=lambda x: abs(x - self.start.price))
         return self.d * (self.extreme - edge) >= 0
 
-    @property
-    def next_first(self) -> bool:
-        """Which plan leads. A correction is read for what follows it; a motive wave for its own target, until reached."""
-        return bool(self.targets) and (not self.motive_running or self.zone_reached)
-
 
 def _ret(a: float, b: float, k: float, use_log: bool) -> float:
     """The k retracement of a-b, back from b. Nearer of linear and log."""
@@ -248,7 +243,8 @@ def _corrective_escape(c: Count, start: float, d: int, cfg: Config) -> Kill:
     return Kill(limit, -d, "pocket_1618", "past the flat ceiling of its first leg: not a B, the wave before is not over (sec 3)")
 
 
-def describe(c: Count, f: Frame, cfg: Config) -> State:
+def describe(c: Count, f: Frame, cfg: Config, extreme: float | None = None) -> State:
+    """`extreme`: for a projected count, whose running wave starts in the future: how far it has gone is given, not read."""
     lv = cfg.levels
     use_log = cfg.frames[f.tf].get("log_fib", False)
     s = c.s
@@ -259,9 +255,11 @@ def describe(c: Count, f: Frame, cfg: Config) -> State:
     start = c.pts[-1]
     wave = waves[done] if done < len(waves) else AFTER
     d = s if done % 2 == 0 else -s
-    hi, lo = _since(f, start)
-    e = hi if d > 0 else lo
-    tf_ms = f.tf_ms
+    if extreme is None:
+        hi, lo = _since(f, start)
+        e = hi if d > 0 else lo
+    else:
+        e = extreme
     if wave == AFTER:
         kinds = tuple(cfg.grammar["after_motive" if c.pattern in MOTIVE else "after_corrective"])
     else:

@@ -34,7 +34,7 @@ THREES = (ZIGZAG, FLAT, COMBO)
 FIRST_FIVE = {IMPULSE, LD, ED, ZIGZAG}  # the structures that start with a 5 (sec 0, UNSPOKEN R1)
 PASS, FAIL, HOLD, RUNNING = "pass", "fail", "hold", "running"
 FIVE, THREE, EITHER = "5", "3", "3 or 5"
-_SOURCES = ("inside.py", "enumerate.py", "pivots.py", "rules.py", "score.py", "state.py", "frames.py")
+_SOURCES = ("inside.py", "clarity.py", "enumerate.py", "pivots.py", "rules.py", "score.py", "state.py", "frames.py")
 _COMMIT_EVERY = 200  # so that an export cut short by its timeout keeps what it read
 
 
@@ -96,10 +96,22 @@ class Cache:
             self.db = sqlite3.connect(self.path, timeout=30)
             self.db.execute("CREATE TABLE IF NOT EXISTS leg (key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID")
 
+    def _busy(self) -> None:
+        """Another run holds the file past the timeout. This run carries on in memory: a slower export beats a failed one."""
+        try:
+            self.db.close()
+        except sqlite3.Error:
+            pass
+        self.db = None
+
     def get(self, key: str):
         if self.db is None:
             return None
-        row = self.db.execute("SELECT value FROM leg WHERE key = ?", (key,)).fetchone()
+        try:
+            row = self.db.execute("SELECT value FROM leg WHERE key = ?", (key,)).fetchone()
+        except sqlite3.OperationalError:
+            self._busy()
+            return None
         if row is None:
             self.misses += 1
             return None
@@ -109,20 +121,28 @@ class Cache:
     def put(self, key: str, value) -> None:
         if self.db is None:
             return
-        self.db.execute("INSERT OR REPLACE INTO leg VALUES (?, ?)", (key, json.dumps(value, separators=(",", ":"))))
+        try:
+            self.db.execute("INSERT OR REPLACE INTO leg VALUES (?, ?)", (key, json.dumps(value, separators=(",", ":"))))
+        except sqlite3.OperationalError:
+            self._busy()
+            return
         self._pending += 1
         if self._pending >= _COMMIT_EVERY:
             self.commit()
 
     def commit(self) -> None:
         if self.db is not None and self._pending:
-            self.db.commit()
+            try:
+                self.db.commit()
+            except sqlite3.OperationalError:
+                self._busy()
             self._pending = 0
 
     def close(self) -> None:
         if self.db is not None:
             self.commit()
-            self.db.close()
+            if self.db is not None:
+                self.db.close()
             self.db = None
 
 

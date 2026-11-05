@@ -104,7 +104,17 @@ def node_lines(n: dict, brief: bool = False) -> list[str]:
     zone = sorted(n["zone"], key=lambda lv: lv["p"])
     lines.append(f"{pad}running: {w['name']} {w['dir']} from {_p(w['start']['p'])}, so far {_p(w['so_far'])}"
                  + (f"; zone {_p(zone[0]['p'])} to {_p(zone[-1]['p'])} ({', '.join(lv['pull'] for lv in n['zone'])})" if zone else "; no zone yet"))
+    lines.append(f"{pad}path: {n['path_text']}")
+    if n["projection"]["inner"]:
+        inner = ", ".join(f"{x['wave']} {_p(x['p'])}" for x in n["projection"]["inner"])
+        lines.append(f"{pad}inside {w['name']}, as a {n['projection']['inner_pattern']}: {inner}")
+    if n["projection"]["status"] not in ("inside", "no parent"):
+        lines.append(f"{pad}against the parent's box: {n['projection']['status']}, weight {n['projection']['nest_f']:.2f}")
     lines.append(f"{pad}next: {n['next']['text']}")
+    for r in n["clarity"]:
+        lines.append(f"{pad}clarity: {r['text']} ({r['value']:.2f})")
+    for x in n["clock"]:
+        lines.append(f"{pad}cycles, no ranking weight: {x['state']}: {x['text']}")
     inv = n["invalidation"]
     lines.append(f"{pad}invalidation: {inv['side']} {_p(inv['p'])} ({inv['rule']}): {inv['note']}")
     kn = n["kill_next"]
@@ -164,6 +174,12 @@ def render(obj: dict, roots: list[str] | None = None, brief: bool = False) -> st
         out.append("")
         out.extend(inside_rule_lines(tree))
         out.append("")
+        rows = tree["clusters"]["rows"][:6]
+        if rows:
+            out.append("Magnets, where the board's levels pile up, not levels price is known to respect:")
+            for m in rows:
+                out.append(f"  {_p(m['p'])} ({m['dist'] * 100:+.1f}%), weight {m['weight']:.2f}, {m['readings']} counts: " + "; ".join(f"{TF_NAME[f['tf']]} {f['name']} {f['pull']}" for f in m["feeds"][:3]))
+            out.append("")
         out.append(f"Tree. Root: {stats['legal']} legal readings in {stats['states']} states. Kept: top {len(tree['levels'][0]['nodes'])}; other/unclear {stats['other_share']:.0%} of fit. Pairings dropped by FIB-T8, the whole tree: {stats.get('unpaired', 0)}.")
         by_parent: dict[str | None, list[dict]] = {}
         for lv in tree["levels"]:
