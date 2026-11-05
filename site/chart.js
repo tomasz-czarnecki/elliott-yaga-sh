@@ -142,8 +142,35 @@ function renderFoot() {
   $('foot-venue').textContent = `${stats.venues[state.venue].title}. ${VENUES[state.venue].note}`;
 }
 
+/** Fractional bar position of a unix time in `b` (step: bar seconds), extrapolated past either end. */
+function barOf(b, t, step) {
+  if (t <= b.time[0]) return (t - b.time[0]) / step;
+  if (t >= b.time[b.n - 1]) return b.n - 1 + (t - b.time[b.n - 1]) / step;
+  let lo = 0;
+  let hi = b.n - 1;
+  while (lo < hi) {
+    const m = (lo + hi + 1) >> 1;
+    if (b.time[m] <= t) lo = m;
+    else hi = m - 1;
+  }
+  return lo + (t - b.time[lo]) / step;
+}
+/** Unix time of a fractional bar position in `b`. */
+function timeOf(b, i, step) {
+  if (i <= 0) return b.time[0] + i * step;
+  if (i >= b.n - 1) return b.time[b.n - 1] + (i - (b.n - 1)) * step;
+  const k = Math.floor(i);
+  return b.time[k] + (i - k) * step;
+}
+let lastView = null; // the time window on screen, so a timeframe or venue switch keeps the same place
+
 async function load() {
   const mine = ++request;
+  if (bars && lastView === null) {
+    const r = chart.timeScale().getVisibleLogicalRange();
+    const step = bars.step;
+    if (r) lastView = { from: timeOf(bars, r.from, step), to: timeOf(bars, r.to, step) };
+  }
   const key = `${state.venue}/${state.tf}`;
   syncControls();
   applyScale();
@@ -170,6 +197,7 @@ async function load() {
     if (mine !== request) return;
   }
   bars = cache.get(key);
+  bars.step = BAR_MINUTES[state.tf] * 60;
   indexByTime = new Map(bars.time.map((t, i) => [t, i]));
 
   const ohlc = new Array(bars.n);
@@ -182,7 +210,13 @@ async function load() {
   candles.setData(ohlc);
   volume.setData(vol);
 
-  if (state.tf === '1d') chart.timeScale().fitContent();
+  if (lastView) {
+    // same right edge in time; the span too, within what is readable on this timeframe
+    const to = barOf(bars, lastView.to, bars.step);
+    const span = Math.min(Math.max(to - barOf(bars, lastView.from, bars.step), 40), 2500);
+    chart.timeScale().setVisibleLogicalRange({ from: to - span, to });
+    lastView = null;
+  } else if (state.tf === '1d') chart.timeScale().fitContent();
   else chart.timeScale().setVisibleLogicalRange({ from: bars.n - BARS_IN_VIEW(), to: bars.n + 4 });
 
   renderReadout(bars.n - 1);

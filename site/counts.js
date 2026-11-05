@@ -25,6 +25,8 @@
     kills: false, // "Killed by what is inside" open
     more: false,  // "All levels" open
     pm: false,    // the premise's details open
+    hover: null,  // the finished wave whose inside is drawn: { node, wave }
+    fitPrice: null, // the price range the last "Fit path" asked for
   };
 
   let data = null;
@@ -90,14 +92,6 @@
   const xAt = (t) => xOfBar(logical(t));
   const visibleVenue = () => data && state.venue === data.venue;
 
-  /** The price levels worth keeping on screen: not one that would crush the candles to a line. */
-  function keepLevels(node) {
-    const out = [node.invalidation.p, ...node.zone.map((z) => z.p)];
-    if (node.odds[0]) out.push(node.odds[0].target);
-    const reach = state.tf === '1d' ? 3 : 1.5;
-    return out.filter((p) => p > data.price / reach && p < data.price * reach);
-  }
-
   /** Which of a count's finished waves show their inside. At the root, whatever leads to a 5: the five he sees may sit two
    * levels down, as the C of a flat X. Below it, only a wave that is a 5 itself: every small correction holds some small 5. */
   const isFive = (r) => /impulse|diagonal/.test(r.pattern);
@@ -134,12 +128,10 @@
     }
 
     autoscaleInfo(from, to) {
-      const node = this.selected();
-      if (!node) return null;
-      const keep = keepLevels(node);
-      const margins = { above: 30, below: chain(node).length * bracketRow() + 4 }; // room for a stack of labels on top; the brackets get their own strip, under the candles
-      if (!keep.length) return { priceRange: null, margins };
-      return { priceRange: { minValue: Math.min(...keep), maxValue: Math.max(...keep) }, margins };
+      // The same for every count, so that choosing one never rescales the chart (his rule: the view is his, only the
+      // drawing changes). Levels off screen get an arrow tag at the edge instead.
+      if (!ui.on || !bars || !visibleVenue()) return null;
+      return { priceRange: ui.fitPrice, margins: { above: 30, below: 4 * bracketRow() + 4 } };
     }
 
     /** Each parent's running wave, faintly, from its start to the right edge: they nest, so the chosen count sits in the darkest part. */
@@ -156,14 +148,6 @@
         c.fillStyle = hexA(col, 0.4);
         c.fillRect(x * hr, 0, Math.max(1, hr), paneH);
       }
-    }
-
-    /** Where the boxes go: just right of the last bar. */
-    boxSpan() {
-      const r = chart.timeScale().getVisibleLogicalRange();
-      const a = bars.n + 1;
-      const b = r ? Math.max(a + 4, r.to - 1) : a + 8;
-      return [xOfBar(a), xOfBar(b)];
     }
 
     /** The running wave's time window on screen: its edges, clipped to the pane, and whether it has already passed. */
@@ -200,21 +184,6 @@
       if (!node) return;
       target.useBitmapCoordinateSpace(({ context: c, horizontalPixelRatio: hr }) => this.drawBands(c, node, hr));
       target.useBitmapCoordinateSpace(({ context: c, horizontalPixelRatio: hr, verticalPixelRatio: vr }) => {
-        const [a, b] = this.boxSpan();
-        if (a == null || b == null) return;
-        const box = (levels, col, fill, x0, x1) => {
-          if (!levels.length || x1 <= x0) return;
-          const ps = levels.map((l) => l.p);
-          const top = candles.priceToCoordinate(Math.max(...ps));
-          const bot = candles.priceToCoordinate(Math.min(...ps));
-          if (top == null || bot == null) return;
-          const h = Math.max(3, bot - top);
-          c.fillStyle = hexA(col, fill);
-          c.fillRect(x0 * hr, top * vr, (x1 - x0) * hr, h * vr);
-          c.strokeStyle = hexA(col, 0.9);
-          c.lineWidth = Math.max(1, hr);
-          c.strokeRect(x0 * hr, top * vr, (x1 - x0) * hr, h * vr);
-        };
         const span = this.windowSpan(node);
         if (span) { // the time window: a band over the whole pane, its edges dashed
           const col = span.past ? color('--down') : color('--accent');
@@ -233,12 +202,43 @@
           }
           c.setLineDash([]);
         }
-        // the target: a price x time box when the window is still ahead, otherwise a box just right of the last bar
-        const live = span && !span.past;
-        box(node.zone, color('--line-strong'), 0.35, live ? span.lo : a, live ? span.hi : b);
-        const nextFrom = live ? Math.max(a, span.hi) : a;
-        box(node.next.targets, node.next.dir === 'up' ? color('--up') : color('--down'), 0.14, nextFrom, b);
+        for (const n of chain(node)) this.drawBoxes(c, n, n === node, hr, vr);
       });
+    }
+
+    /** A count's boxes, faint behind the candles. The running wave's own is the primary one and the rest step down; the move after
+     * a structure is an outline only, never a filled box: it must not read as the prediction. */
+    drawBoxes(c, n, active, hr, vr) {
+      const width = chart.timeScale().width();
+      const last = xOfBar(bars.n - 1);
+      const dim = active ? 1 : 0.45;
+      const rect = (leg, col, fill, line, dash) => {
+        if (leg.p_lo == null || leg.reached) return;
+        const top = candles.priceToCoordinate(leg.p_hi);
+        const bot = candles.priceToCoordinate(leg.p_lo);
+        if (top == null || bot == null) return;
+        const x0 = Math.max(last + 2, leg.t_lo != null ? xAt(leg.t_lo) : xAt(leg.t0));
+        const x1 = leg.t_hi != null && !leg.late ? xAt(leg.t_hi) : xAt(leg.t);
+        if (x1 == null || x1 <= x0 || x0 > width || x1 < 0) return;
+        const f = leg.nest_f ?? 1;
+        if (fill) {
+          c.fillStyle = hexA(col, fill * dim * f);
+          c.fillRect(x0 * hr, top * vr, (x1 - x0) * hr, Math.max(3, bot - top) * vr);
+        }
+        c.strokeStyle = hexA(col, line * dim * Math.max(f, 0.5));
+        c.lineWidth = Math.max(1, hr);
+        c.setLineDash(dash ? dash.map((d) => d * hr) : []);
+        c.strokeRect(x0 * hr, top * vr, (x1 - x0) * hr, Math.max(3, bot - top) * vr);
+        c.setLineDash([]);
+      };
+      const body = color('--line-strong');
+      for (const leg of n.projection.inner) rect(leg, degreeColor(n.depth + 1), active ? 0.04 : 0, active ? 0.18 : 0, [2, 4]);
+      for (const leg of n.projection.legs) {
+        const way = leg.dir === 'up' ? color('--up') : color('--down');
+        if (leg.role === 'running') rect(leg, way, 0.2, 0.8);
+        else if (leg.role === 'remaining') rect(leg, body, 0.14, 0.45);
+        else rect(leg, body, 0, 0.3, [2, 4]);
+      }
     }
 
     drawFront(target) {
@@ -258,7 +258,10 @@
         for (const n of path) this.drawInside(c, shownInside(n), n.depth + 1, hr, vr);
         this.drawRunning(c, node, hr, vr);
         this.drawLegs(c, node, hr, vr);
+        this.drawHover(c, hr, vr);
         this.drawCrosshairs(c, node, hr, vr);
+        for (const n of tree().levels[0].nodes) if (n !== path[0]) this.drawPath(c, n, 'alternate', hr, vr); // the other roots, fainter still
+        for (const n of path) this.drawPath(c, n, n === node ? 'active' : 'parent', hr, vr);
         this.drawWindowTag(c, node, hr, vr);
         this.drawLevels(c, node, hr, vr);
         this.drawBrackets(c, path, hr, vr);
@@ -360,6 +363,102 @@
         line(r.text, degreeColor(r.n.depth), r.n.id === ui.node ? color('--ink') : color('--body'), y);
         y += EDGE_ROW;
       }
+    }
+
+    /** The projected path: from the last price through the most likely point of each box, dashed. Weight follows how the chain
+     * reads it: the chosen count, its parents, the other roots. A level outside the parent's box is drawn dimmer, not dropped. */
+    drawPath(c, n, mode, hr, vr) {
+      const legs = n.projection.legs;
+      if (!legs.length) return;
+      const width = chart.timeScale().width();
+      const col = mode === 'active' ? color('--accent') : mode === 'parent' ? degreeColor(n.depth) : color('--muted');
+      const base = { active: 0.95, parent: 0.6, alternate: 0.28 }[mode];
+      const own = legs[0].role === 'running' && n.projection.inner.length ? legs.slice(1) : legs;
+      const steps = [...n.projection.inner, ...own].filter((leg) => !leg.reached);
+      const start = { x: xOfBar(bars.n - 1), y: candles.priceToCoordinate(data.price) };
+      let from = start;
+      const placed = [];
+      for (const leg of steps) {
+        const to = { x: xAt(leg.t), y: candles.priceToCoordinate(leg.p) };
+        if (to.x == null || to.y == null || from.x == null || from.y == null) break;
+        const after = leg.role === 'after';
+        c.strokeStyle = hexA(col, Math.max(0.12, base * (after ? 0.4 : 1) * (leg.nest_f ?? 1)));
+        c.lineWidth = Math.max(1, (mode === 'active' && !after ? 2 : 1) * hr);
+        c.setLineDash((after ? [2, 5] : leg.role === 'inner' ? [4, 4] : [7, 4]).map((d) => d * hr));
+        c.beginPath();
+        c.moveTo(from.x * hr, from.y * vr);
+        c.lineTo(to.x * hr, to.y * vr);
+        c.stroke();
+        c.setLineDash([]);
+        placed.push({ leg, ...to });
+        from = to;
+      }
+      if (mode === 'alternate') return;
+      const size = narrow() ? 9 : 10;
+      c.font = `${size * vr}px 'Geist Mono', monospace`;
+      c.textAlign = 'center';
+      for (const { leg, x, y } of placed) {
+        if (x < 0 || x > width) continue;
+        const after = leg.role === 'after';
+        if (after && mode !== 'active') continue;
+        if (leg.role === 'inner' && mode !== 'active') continue;
+        c.fillStyle = hexA(col, after ? 0.55 : 0.95);
+        c.beginPath();
+        c.arc(x * hr, y * vr, (after ? 2 : 3) * hr, 0, Math.PI * 2);
+        c.fill();
+        const name = after ? `after ${labelText(legs[0].wave === 'after' ? n.labels[n.labels.length - 1].l : legs[legs.length - 2]?.wave ?? '', n.depth)}`
+          : leg.role === 'inner' ? labelText(leg.wave, n.depth + 1) : labelText(leg.wave, n.depth);
+        const text = `${name} ${shortP(leg.p)}`;
+        const below = leg.dir === 'down';
+        let ty = y + (below ? 12 : -12);
+        while (this.taken.some((t) => Math.abs(t.x - x) < 30 && Math.abs(t.y - ty) < 12)) ty += below ? 12 : -12;
+        this.taken.push({ x, y: ty });
+        const w = c.measureText(text).width / hr + 6;
+        c.fillStyle = hexA(color('--bg'), 0.8);
+        c.fillRect((x - w / 2) * hr, (ty - 7) * vr, w * hr, 14 * vr);
+        c.fillStyle = after ? color('--muted') : hexA(color('--ink'), Math.max(0.5, leg.nest_f ?? 1));
+        c.fillText(text, x * hr, ty * vr);
+      }
+    }
+
+    /** A finished wave's inside, while the pointer is on its word in the popover: the labelling on the chart and, if another
+     * reads clearer, that one dashed. A leg that reads weak is red, so that he can see what he is overruling. */
+    drawHover(c, hr, vr) {
+      const h = ui.hover;
+      const n = h ? byId.get(h.node) : null;
+      const row = n?.clarity.find((r) => r.label === h.wave);
+      if (!row) return;
+      const draw = (reading, dashed) => {
+        if (!reading) return;
+        const pts = reading.labels.map((l) => ({ ...l, x: xAt(at(l)), y: candles.priceToCoordinate(l.p) }));
+        if (pts.some((p) => p.x == null || p.y == null)) return;
+        pts.forEach((p, i) => {
+          if (!i) return;
+          const sub = reading.subs.find((x) => x.wave === p.l);
+          const weak = sub && (sub.word === 'weak' || sub.word === 'very weak');
+          c.strokeStyle = weak ? color('--down') : color('--accent');
+          c.lineWidth = Math.max(1, (dashed ? 1 : 2) * hr);
+          c.setLineDash(dashed ? [5 * hr, 4 * hr] : []);
+          c.beginPath();
+          c.moveTo(pts[i - 1].x * hr, pts[i - 1].y * vr);
+          c.lineTo(p.x * hr, p.y * vr);
+          c.stroke();
+        });
+        c.setLineDash([]);
+        c.font = `${(narrow() ? 10 : 12) * vr}px 'Geist Mono', monospace`;
+        c.textAlign = 'center';
+        for (const p of pts) {
+          if (p.l === '0') continue;
+          const y = p.y + (p.kind === 'H' ? -16 : 16) * (dashed ? 2 : 1);
+          const w = c.measureText(p.l).width / hr + 8;
+          c.fillStyle = color('--bg');
+          c.fillRect((p.x - w / 2) * hr, (y - 8) * vr, w * hr, 16 * vr);
+          c.fillStyle = color('--ink');
+          c.fillText(p.l, p.x * hr, y * vr);
+        }
+      };
+      draw(row.shown, false);
+      if (row.best && row.shown && row.best.pattern !== row.shown.pattern) draw(row.best, true);
     }
 
     drawCount(c, node, hr, vr, active) {
@@ -612,16 +711,32 @@
         line(node.kill_next.p, hexA(down, 0.6), [2, 3]);
         this.levelTag(c, `Kill ${node.kill_next.side} ${shortP(node.kill_next.p)}`, node.kill_next.p, hexA(down, 0.6), hr, vr);
       }
-      if (node.zone.length) {
-        const ps = node.zone.map((l) => l.p);
-        const mid = (Math.max(...ps) + Math.min(...ps)) / 2;
-        this.levelTag(c, `Zone ${shortP(Math.min(...ps))}-${shortP(Math.max(...ps))}`, mid, color('--line-strong'), hr, vr);
+      const legs = node.projection.legs;
+      const main = legs[0];
+      if (main?.p_lo != null) this.levelTag(c, `${main.wave === 'after' ? 'After' : WAVE(main.wave)} box ${shortP(main.p_lo)}-${shortP(main.p_hi)}`, (main.p_lo + main.p_hi) / 2, main.dir === 'up' ? color('--up') : color('--down'), hr, vr);
+      const nl = node.next_leg;
+      const held = tree().clusters.rows.filter((m) => m.id === nl?.cluster?.id);
+      for (const m of narrow() ? held : [...held, ...tree().clusters.rows.slice(0, 3).filter((x) => !held.includes(x))]) { // a phone's pane has room for one
+        const y = candles.priceToCoordinate(m.p);
+        const paneH = c.canvas.height / vr;
+        if (y == null || y < 14 || y > paneH - 14) continue; // a magnet off the chart is in the panel: only what can be read here gets a tag
+        const mine = nl?.cluster?.id === m.id;
+        c.strokeStyle = hexA(color('--accent'), mine ? 0.7 : 0.3);
+        c.lineWidth = Math.max(1, hr);
+        c.setLineDash([1 * hr, 3 * hr]);
+        c.beginPath();
+        c.moveTo((width * 0.82) * hr, y * vr);
+        c.lineTo(width * hr, y * vr);
+        c.stroke();
+        c.setLineDash([]);
+        if (!this.tags.some((t) => Math.abs(t - y) < 15)) this.levelTag(c, `Magnet ${shortP(m.p)} ·${m.readings}`, m.p, hexA(color('--accent'), mine ? 1 : 0.55), hr, vr); // a tag pushed off its level would lie about it: the panel has the rest
       }
-      if (node.next.targets.length) {
-        const ps = node.next.targets.map((l) => l.p);
-        const mid = (Math.max(...ps) + Math.min(...ps)) / 2;
-        const col = node.next.dir === 'up' ? color('--up') : color('--down');
-        this.levelTag(c, `Next ${shortP(Math.min(...ps))}-${shortP(Math.max(...ps))}`, mid, col, hr, vr);
+      const after = legs.find((l) => l.role === 'after');
+      if (after && !narrow()) { // small and muted, and only where it can be seen: the move after is one step further, never the plan
+        const y = candles.priceToCoordinate(after.p);
+        if (y != null && y > 14 && y < c.canvas.height / vr - 14 && !this.tags.some((t) => Math.abs(t - y) < 15)) {
+          this.levelTag(c, `after ${WAVE(legs[legs.length - 2]?.wave ?? '')} ${shortP(after.p)}`, after.p, hexA(color('--muted'), 0.5), hr, vr);
+        }
       }
     }
   }
@@ -714,6 +829,35 @@
     return `<div><span class="k">Inside</span>${n.inside_rule.map(word).join(' · ')}</div>`;
   }
 
+  /** How clearly each finished wave holds its form. Hover, or tap, a word: its inside is drawn on the chart. */
+  function clarityLine(n) {
+    if (!n.clarity.length) return '';
+    const word = (r) => {
+      const other = r.best && r.shown && r.best.pattern !== r.shown.pattern ? ` Dashed: ${esc(r.best.name)}, clearer at ${num(r.best.value)}.` : '';
+      const on = r.shown ? `On the chart: ${esc(r.shown.name)} at ${TF_NAME[r.shown.tf] ?? r.shown.tf}, ${num(r.shown.value)}.` : '';
+      return `<span class="cp-cl cp-cl-${r.word.replace(' ', '-')}" tabindex="0" data-node="${n.id}" data-wave="${esc(r.label)}" title="${on}${other}">${esc(r.text)}</span>`;
+    };
+    return `<div><span class="k">Clarity</span>${n.clarity.map(word).join('<br>')}</div>`;
+  }
+
+  function pathLine(n) {
+    const p = n.projection;
+    const inner = p.inner.length ? `. Inside ${esc(n.wave.name)}, as a ${esc(p.inner_pattern)}: ${p.inner.map((l) => `${esc(l.wave)} ${shortP(l.p)}`).join(', ')}` : '';
+    return `${esc(n.path_text)}${inner}`;
+  }
+
+  function nestLine(n) {
+    const p = n.projection;
+    if (p.status === 'no parent' || p.status === 'inside' || p.status === 'on the way') return '';
+    const what = { short: 'ends short of', beyond: 'lands past', late: 'lands after' }[p.status];
+    return `<div class="cp-dim"><span class="k">Parent</span>${what} the parent's box, drawn dimmer. It can be a part of that wave, not all of it</div>`;
+  }
+
+  function clockLine(n) {
+    if (!n.clock.length) return '';
+    return `<div><span class="k">Cycles</span>${n.clock.map((x) => `<span class="cp-clock cp-clock-${x.state.replace(' ', '-')}">${esc(x.state)}</span>: ${esc(x.text)}`).join('<br>')}<br><span class="cp-sec-id">Information only, no ranking weight</span></div>`;
+  }
+
   function alikeLine(n) {
     if (!n.alike?.length) return '';
     const row = (k, v) => `<div><span class="k">${k}</span>${v}</div>`;
@@ -729,16 +873,21 @@
       row('Fit', `<b class="cp-fit-big">${num(n.fit.score)}</b> ${axesLine(n)}`),
       row('Legs', legsLine(n)),
       insideRuleLine(n),
+      clarityLine(n),
       insideLines(shownInside(n)),
       alikeLine(n),
       row('Running', `${esc(n.wave.name)} ${n.wave.dir} from ${px(n.wave.start.p)}, so far ${px(n.wave.so_far)}`),
       row('Target', targetLine(n)),
+      row('Path', pathLine(n)),
+      nestLine(n),
+      clockLine(n),
       n.crosshair_hit ? row('Crosshair', `the extreme so far sits on one (${esc(n.crosshair_hit.pull)})`) : '',
       n.fit.fails.length ? `<div class="cp-fail"><span class="k">Missed</span>${esc(n.fit.fails.join(', '))}: ranks lower, kills nothing</div>` : '',
       row('Invalid', `${n.invalidation.side} ${px(n.invalidation.p)}`),
       n.kill_next.p !== n.invalidation.p ? row('Nearest kill', `${n.kill_next.side} ${px(n.kill_next.p)}, ${pct(n.kill_next.dist)} away`) : '',
       o ? row(`Odds, ${o.name}`, oddsText(o)) : row('Odds', 'none: no target ahead of price with an invalidation behind it'),
       n.no_child ? row('One frame down', 'no legal parse of the running wave') : '',
+      n.next_leg ? row('Next leg', esc(nextFull(n))) : '',
       `<details class="cp-more" data-open="why"${ui.why ? ' open' : ''}><summary>Why this score</summary>${whyBlock(n)}</details>`,
       `<details class="cp-more" data-open="more"${ui.more ? ' open' : ''}><summary>All levels</summary>${moreBlock(n)}</details>`,
     ].join('');
@@ -801,6 +950,53 @@
     }).join('');
   }
 
+  /** The nearest tradable output: the running wave's next level on a frame, with what kills it. */
+  function nextShort(n) {
+    const o = n.next_leg;
+    if (!o) return 'no level ahead with an invalidation behind it';
+    const way = o.dir === 'up' ? 'up' : 'down';
+    return `${way} ${shortP(o.target)} · inv ${shortP(o.stop)} · R:R ${o.rr.toFixed(1)} · ${pct(o.p)}`;
+  }
+
+  function nextFull(n) {
+    const o = n.next_leg;
+    if (!o) return 'No level ahead with an invalidation behind it.';
+    const when = o.window ? `, window ${o.window.lo} to ${o.window.hi}${o.window.status === 'past' ? ' (past)' : ''}` : ', no window: the book gives this wave no time';
+    const mag = o.cluster ? `Magnet ${px(o.cluster.p)}: ${o.cluster.readings} counts on ${o.cluster.frames.map((f) => TF_NAME[f]).join(' ')}.` : 'On no magnet.';
+    return `${o.dir} to ${px(o.target)} (${esc(o.pull)}) before ${px(o.stop)}${when}. R:R ${o.rr.toFixed(2)}. Volatility null ${pct(o.p)} within ${o.h_bars} bars, ${pct(o.p_nolimit)} with no limit. ${mag}`;
+  }
+
+  /** Which nodes the panel's "next leg" lines are about: the chosen chain's 1H and 15m, else the first of each. */
+  function nextNodes(t) {
+    const sel = ui.node ? byId.get(ui.node) : null;
+    const on = sel ? new Set(chain(sel).map((n) => n.id)) : null;
+    const downward = (id) => { const out = []; for (let n = byId.get(id); n; n = n.children.length ? byId.get(n.children[0]) : null) out.push(n); return out; };
+    const path = sel ? [...chain(sel), ...downward(sel.id).slice(1)] : [];
+    return ['1h', '15m'].map((tf) => path.find((n) => n.tf === tf) ?? t.levels.find((lv) => lv.tf === tf)?.nodes[0]).filter(Boolean);
+  }
+
+  function nextBlock(t) {
+    const rows = nextNodes(t).map((n) => `<div class="cp-crossline cp-wide"><span class="cp-tf">Next ${TF_NAME[n.tf]}</span><span class="cp-crosstext" title="${esc(nextFull(n))}">${esc(nextShort(n))}</span></div>`).join('');
+    return `<section class="cp-next cp-line"><div class="cp-crosslines">${rows}</div>${infoBtn('next', 'the next leg')}</section>`;
+  }
+
+  function nextPop(t) {
+    return nextNodes(t).map((n) => `<div class="cp-cross"><span class="cp-tf">${TF_NAME[n.tf]}</span><span>${esc(n.short)}: ${esc(nextFull(n))}</span></div>`).join('')
+      + '<p class="cp-sec-id">The odds are a random walk at today\'s volatility, not the count\'s. A target is the running wave\'s nearest level ahead (sec 4: the conservative one first).</p>';
+  }
+
+  /** Where the board's levels pile up. */
+  function magnetsBlock(t) {
+    const rows = t.clusters.rows.slice(0, 3).map((m) => `<div class="cp-crossline cp-wide cp-magnet"><span class="cp-tf">Mag ${shortP(m.p)}</span><span class="cp-crosstext">${(m.dist * 100).toFixed(1).replace(/^(?!-)/, '+')}%, ${m.readings} ${m.readings === 1 ? 'count' : 'counts'}, ${m.frames.map((f) => TF_NAME[f]).join(' ')}</span></div>`).join('');
+    return `<section class="cp-magnets cp-line"><div class="cp-crosslines">${rows}</div>${infoBtn('magnets', 'magnets')}</section>`;
+  }
+
+  function magnetsPop(t) {
+    const feed = (f) => `<li><span class="${f.status === 'beyond' || f.status === 'short' || f.status === 'late' ? 'cp-dim' : ''}">${TF_NAME[f.tf]} ${esc(f.name)}: ${esc(f.pull)} at ${px(f.p)}${f.status && f.status !== 'no parent' && f.status !== 'inside' ? ` (${esc(f.status)} the parent's box)` : ''}</span></li>`;
+    return t.clusters.rows.slice(0, 6).map((m) => `<div class="cp-axis"><b>${px(m.p)}</b> ${(m.dist * 100).toFixed(1)}%, weight ${m.weight.toFixed(2)}, ${m.readings} ${m.readings === 1 ? 'count' : 'counts'}<ul>${m.feeds.slice(0, 6).map(feed).join('')}</ul></div>`).join('')
+      + '<p class="cp-sec-id">Levels from every frame and root within a volatility-scaled distance, weighted by the fit of the counts that make them, each count once. Where the board\'s levels pile up, not a level price is known to respect: Fib levels hit at random-path rates.</p>';
+  }
+
   function aboutBlock(t) {
     const stats = t.levels[0].stats;
     return `<p>${esc(VENUES[data.venue].label)}, as of ${esc(data.as_of_str)} UTC, close ${px(data.price)}. Rules ${esc(data.rules_version)}.</p>`
@@ -822,6 +1018,8 @@
     const t = tree();
     if (key === 'premise') return { head: 'Premise', body: premiseBlock() };
     if (key === 'cross') return { head: 'Crossroads and Y\'s', body: crossBlock(t) };
+    if (key === 'next') return { head: 'Next leg', body: nextPop(t) };
+    if (key === 'magnets') return { head: 'Magnets', body: magnetsPop(t) };
     if (key === 'about') return { head: 'About these counts', body: aboutBlock(t) };
     const n = byId.get(key);
     if (!n) return null;
@@ -851,6 +1049,15 @@
       d.addEventListener('toggle', () => { ui[d.dataset.open] = d.open; placePop(); });
     }
     pop.el.querySelector('.cp-pop-x').addEventListener('click', () => closePop(true));
+    for (const w of pop.el.querySelectorAll('.cp-cl')) {
+      const on = () => { ui.hover = { node: w.dataset.node, wave: w.dataset.wave }; primitive.requestUpdate?.(); };
+      const off = () => { ui.hover = null; primitive.requestUpdate?.(); };
+      w.addEventListener('pointerenter', on);
+      w.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') off(); });
+      w.addEventListener('focus', on);
+      w.addEventListener('blur', off);
+      w.addEventListener('click', () => { if (ui.hover?.wave === w.dataset.wave) return; on(); });
+    }
     markIcons();
     placePop();
     pop.el.scrollTop = scroller;
@@ -865,6 +1072,7 @@
     pop.key = null;
     pop.pinned = false;
     pop.el.hidden = true;
+    if (ui.hover) { ui.hover = null; primitive.requestUpdate?.(); }
     markIcons();
     if (giveFocusBack) iconOf(key)?.focus({ preventScroll: true });
   }
@@ -1011,10 +1219,10 @@
     host.innerHTML = `${line}<div class="cp-head"><div class="cp-title cp-line"><b>Counts</b><div class="seg" id="seg-count-root" role="group" aria-label="Root timeframe"></div>${infoBtn('about', 'about these counts')}</div>`
       + `<div class="cp-asof">${esc(VENUES[data.venue].label)}, as of ${esc(data.as_of_str)} UTC, close ${px(data.price)}</div>${off}</div>`
       + `<section class="cp-crossroads cp-line"><div class="cp-crosslines">${cross}</div>${infoBtn('cross', 'crossroads and Y\'s')}</section>`
+      + nextBlock(t) + magnetsBlock(t)
       + `<section class="cp-list"><div class="cp-listbar"><span class="cp-listbar-k">Chart zoom</span><div class="seg" id="seg-count-view" role="group" aria-label="Chart zoom"></div></div>`
-      + `<div class="cp-cols" aria-hidden="true"><span>Count</span><span class="cp-cols-fit" title="Rulebook fit, not a win chance">Fit</span></div>`
-      + `<div class="cp-tree" role="tree" aria-label="Wave counts, largest degree first">${rows}</div>`
-      + `<p class="cp-foot">Top ${t.levels[0].nodes.length} of ${stats.legal} legal readings at the root. Other or unclear: ${pct(stats.other_share)} of fit. Fit is rulebook fit, not a win chance.</p></section>`;
+      + `<div class="cp-cols"><span>Count · other or unclear ${pct(stats.other_share)}</span><span class="cp-cols-fit" title="Rulebook fit, not a win chance">Fit</span></div>`
+      + `<div class="cp-tree" role="tree" aria-label="Wave counts, largest degree first">${rows}</div></section>`;
     host.scrollTop = scroller;
     if (scrollToPick) {
       scrollToPick = false;
@@ -1029,22 +1237,24 @@
       ui.node = null;
       ui.cursor = null;
       index();
-      if (autoPick() && bars) zoomTo(byId.get(ui.node));
+      autoPick();
       render();
       changed();
     });
     markSeg(seg, ui.root);
     const views = $('seg-count-view');
-    buildSeg(views, { chain: 'Whole chain', focus: 'This count' }, (v) => {
-      ui.view = v;
-      keep();
+    buildSeg(views, { chain: 'Fit chain', focus: 'Fit count', path: 'Fit path' }, (v) => {
       const n = ui.node ? byId.get(ui.node) : null;
-      if (n && bars && visibleVenue()) zoomTo(n);
+      if (v !== 'path') { ui.view = v; keep(); }
+      if (n && bars && visibleVenue()) {
+        if (v === 'path') fitPath(n);
+        else { ui.fitPrice = null; zoomTo(n); }
+      }
       render();
       syncControls();
       primitive.requestUpdate?.();
     });
-    markSeg(views, ui.view);
+    // one-shot zoom buttons, no lasting state to mark
     markIcons();
     placePop();
   }
@@ -1228,6 +1438,21 @@
     return own;
   }
 
+  /** One press, one view: the whole projected path of this count, in time and in price. A price range the chart has never been
+   * asked for stays until another Fit or a timeframe switch: choosing a count still moves nothing. */
+  function fitPath(node) {
+    const legs = [...node.projection.inner, ...node.projection.legs.filter((l) => l.role !== 'after')];
+    const ps = legs.flatMap((l) => [l.p, l.p_lo, l.p_hi]).filter((p) => p != null);
+    if (ps.length) ui.fitPrice = { minValue: Math.min(...ps), maxValue: Math.max(...ps) };
+    const first = logical(at(node.labels[0]));
+    const last = bars.n - 1;
+    const ends = legs.flatMap((l) => [l.t, l.t_hi]).filter((t) => t != null);
+    const reach = Math.max(last, ...ends.map(logical));
+    const room = Math.max(8, (reach - first) * 0.06);
+    chart.timeScale().setVisibleLogicalRange({ from: first - room, to: reach + room + (reach - first) * 0.2 }); // the tags' place is right of the boxes
+    candles.priceScale().applyOptions({ autoScale: true });
+  }
+
   function zoomTo(node) {
     const first = ui.view === 'chain' ? chainStart(node) : logical(at(node.labels[0]));
     chart.timeScale().setVisibleLogicalRange(viewFrom(first, node));
@@ -1252,16 +1477,13 @@
     if (!node) return;
     ui.node = id;
     reveal(id);
-    const tf = chartTf(node.tf);
     render();
-    if (state.tf !== tf || state.venue !== data.venue) {
-      state.tf = tf;
+    if (state.venue !== data.venue) { // the counts are for one venue only; the timeframe and the view stay as they are
       state.venue = data.venue;
-      ui.pendingZoom = true;
+      ui.keepPick = true; // what he chose stays chosen when the bars arrive
       load();
       return;
     }
-    zoomTo(node);
     syncControls();
     primitive.requestUpdate?.();
   }
@@ -1290,6 +1512,8 @@
       const markers = primitive.edgeRows(chain(node));
       return {
         node: node.id,
+        hover: ui.hover,
+        fitPrice: ui.fitPrice,
         path: chain(node).map((n) => n.id),
         labels: chain(node).flatMap((n) => n.labels.map((l) => {
           const x = xAt(at(l));
@@ -1301,12 +1525,11 @@
     onBars() {
       if (!data) return;
       if (ui.on) {
+        ui.fitPrice = null;
         addRecentBars();
         footNote();
-        if (autoPick()) {
-          ui.pendingZoom = true;
-          syncControls();
-        }
+        if (ui.keepPick) ui.keepPick = false;
+        else if (autoPick()) syncControls();
       }
       const node = ui.node ? byId.get(ui.node) : null;
       if (ui.on && ui.pendingZoom && node) {
@@ -1336,7 +1559,7 @@
     } catch {
       return; // no data, no toggle
     }
-    if (file.format !== 'ewave-counts-4') return;
+    if (file.format !== 'ewave-counts-6') return;
     data = file;
     ui.root = data.trees[ui.root] ? ui.root : data.default_root;
     index();
@@ -1359,14 +1582,10 @@
       if (ui.on) {
         addRecentBars();
         footNote();
-        if (autoPick() && bars) ui.zoomAfterLayout = true;
+        autoPick();
         render();
       }
       changed();
-      if (ui.zoomAfterLayout) {
-        ui.zoomAfterLayout = false; // the panel narrows the chart first; zoom once it has resized
-        setTimeout(() => { const n = byId.get(ui.node); if (n && bars) { zoomTo(n); primitive.requestUpdate?.(); } }, 80);
-      }
     });
     seg.hidden = false;
     changed();

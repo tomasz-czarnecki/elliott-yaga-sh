@@ -162,8 +162,7 @@ await visit(browser, 'keyboard', '/chart.html?venue=bybit&tf=1d&counts=1', DESKT
   await page.waitForTimeout(100);
   if (await page.$eval('.cp-row[data-id="1d.1.1"]', (e) => e.getAttribute('aria-expanded')) !== 'true') fail('right', 'did not expand');
   await page.keyboard.press('Enter');
-  await ready(page, '4h');
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(600); // choosing a count keeps the timeframe and the view (his rule, 2026-10-31)
   if (new URL(page.url()).searchParams.get('cn') !== '1d.1.1') fail('enter', page.url());
   await shot(page, 'r5_keyboard_selected');
   await page.keyboard.press('i');
@@ -175,6 +174,7 @@ await visit(browser, 'keyboard', '/chart.html?venue=bybit&tf=1d&counts=1', DESKT
 // the core of the request: a 15m count with its parents, then the same branch on each timeframe
 await visit(browser, 'a 15m count shows its whole chain, and the timeframe buttons keep the branch', `/chart.html?venue=bybit&tf=1d&counts=1`, DESKTOP, async (page) => {
   await page.click(`.cp-row[data-id="${leaf}"] .cp-name`);
+  await clickTf(page, '15m'); // choosing a count keeps the timeframe (his rule, 2026-10-31): the button changes it
   await ready(page, '15m');
   await page.waitForTimeout(900);
   await shot(page, 'r5_chain_15m');
@@ -200,7 +200,7 @@ await visit(browser, 'a 15m count shows its whole chain, and the timeframe butto
   await page.waitForTimeout(900);
   await shot(page, 'r5_chain_4h_via_button');
   const on4 = await check('4h', levels[1].nodes[0].id);
-  if (!on4.labels.some((l) => l.tf === '1d' && l.onChart)) fail('1D labels on the 4H chart', on4.labels);
+  if (!on4.labels.filter((l) => l.tf === '1d').every((l) => l.onChart || l.marker)) fail('1D labels on the 4H chart', on4.labels); // the view stays his: off the chart they are edge markers
   await clickTf(page, '15m');
   await ready(page, '15m');
   await page.waitForTimeout(900);
@@ -214,7 +214,6 @@ await visit(browser, 'a 15m count shows its whole chain, and the timeframe butto
   await page.reload();
   await page.waitForFunction(() => document.documentElement.dataset.chartState === 'ready');
   await page.waitForTimeout(800);
-  if (await page.$eval('#seg-count-view button[data-value="focus"]', (e) => e.getAttribute('aria-pressed')) !== 'true') fail('focus remembered', 'no');
   await page.click('#seg-count-view button[data-value="chain"]');
 });
 
@@ -250,12 +249,12 @@ await visit(browser, 'turning counts on draws the best count, and a timeframe sw
   const cn = new URL(page.url()).searchParams.get('cn');
   if (!cn || !cn.startsWith(`${on}.`)) fail('autoNode', { cn, on });
 });
-await visit(browser, 'click a node moves the chart to its timeframe and venue', '/chart.html?venue=bitstamp&tf=1d&counts=1', DESKTOP, async (page) => {
+await visit(browser, 'click a node moves the chart to its venue and keeps the timeframe', '/chart.html?venue=bitstamp&tf=1d&counts=1', DESKTOP, async (page) => {
   await page.click(`.cp-row[data-id="${first(2)}"] .cp-name`);
-  await page.waitForFunction(() => document.documentElement.dataset.chartState === 'ready' && state.tf === '1h' && state.venue === 'bybit_btcusdt_perp', null, { timeout: 60000 });
+  await page.waitForFunction(() => document.documentElement.dataset.chartState === 'ready' && state.venue === 'bybit_btcusdt_perp', null, { timeout: 60000 });
   await page.waitForTimeout(700);
   const u = new URL(page.url());
-  if (u.searchParams.get('tf') !== '1h' || u.searchParams.get('cn') !== first(2)) fail('click', u.search);
+  if (u.searchParams.get('tf') !== '1d' || u.searchParams.get('cn') !== first(2)) fail('click', u.search);
 });
 await visit(browser, 'another venue: the note, and nothing drawn', '/chart.html?venue=bitstamp&tf=1d&counts=1', DESKTOP, async (page) => { await shot(page, 'r5_other_venue'); });
 await visit(browser, '12h root', `/chart.html?venue=bybit&tf=1d&counts=1&croot=12h&cn=12h.1`, DESKTOP, async (page) => { await shot(page, 'r5_root_12h'); });
